@@ -59,3 +59,18 @@ for the things that it’s good at"):
 
 	To support this principle, the Live Connect APIs limit the set of file formats
 	that apps can upload to SkyDrive.
+
+[ToS for LiveConnect APIs](http://msdn.microsoft.com/en-US/library/live/ff765012)
+is kinda weird, having unclear (at least to layman like me) stuff like this:
+
+* You may only use the Live SDK and Live Connect APIs to create software.
+
+	Seem to imply that APIs shouldn't be used in hardware, but I fail to see why
+	it can't also be interpreted as "only create software, not just use it to
+	get/store stuff".
+
+* You are solely and entirely responsible for all uses of Live Connect occurring
+	under your Client ID.
+
+	So either you take the blame for every potential user or go make all users
+	register their own app? Hopefully I've misinterpreted that one.
