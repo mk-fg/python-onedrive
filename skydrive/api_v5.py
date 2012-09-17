@@ -137,6 +137,7 @@ class SkyDriveAPI(SkyDriveAuth):
 
 	def _api_url( self, path, query=dict(),
 			pass_access_token=True, pass_empty_values=False ):
+		query = query.copy()
 		if pass_access_token:
 			query.setdefault('access_token', self.auth_access_token)
 		if not pass_empty_values:

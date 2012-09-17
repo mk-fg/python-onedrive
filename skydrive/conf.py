@@ -62,9 +62,9 @@ class ConfigMixin(object):
 					v = getattr(self, '{}_{}'.format(ns, k), None)
 					if isinstance(v, unicode): v = v.encode('utf-8')
 					if v != conf.get(ns, dict()).get(k):
-						log.debug(
-							'Different val ({}.{}): {!r} != {!r}'\
-							.format(ns, k, v, conf.get(ns, dict()).get(k)) )
+						# log.debug(
+						# 	'Different val ({}.{}): {!r} != {!r}'\
+						# 	.format(ns, k, v, conf.get(ns, dict()).get(k)) )
 						conf.setdefault(ns, dict())[k] = v
 						conf_updated = True
 
