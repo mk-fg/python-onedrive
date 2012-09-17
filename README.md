@@ -48,6 +48,8 @@ All but a few default paths (like "my_documents") are accessed by file/folder
 IDs, which are not derived from their names or paths in any obvious way and look
 like "folder.a6b2a7e8f2515e5e.A6B2A7E8F2515E5E!110".
 UI-visible names come on top of these as metadata.
+Aforementioned "default paths" (like "my_documents") don't seem to work reliably
+with copy and move methods, unless resolved to folder_id proper.
 
 There are some handy special API URLs for stuff like quota and a list of recent
 changes.

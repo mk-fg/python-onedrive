@@ -4,6 +4,7 @@ from __future__ import unicode_literals, print_function
 
 import itertools as it, operator as op, functools as ft
 from datetime import datetime, timedelta
+from os.path import join, basename
 import os, sys, math, urllib, urlparse, json, types
 import requests
 
@@ -25,15 +26,30 @@ class AuthenticationError(SkyDriveInteractionError): pass
 
 
 
-def request( url, method='get',
-		data=None, files=None, raw=False, raise_for=dict() ):
-	kwz, func = dict(), getattr(requests, method.lower())
-	if data is not None: kwz['data'] = data
+def _generic_request(*argz, **kwz):
+	log.debug('Request data: {}, {}'.format(argz, kwz))
+	req = requests.Request(*argz, **kwz)
+	req.send()
+	return req.response
+
+def request( url, method='get', data=None, files=None,
+		raw=False, headers=dict(), raise_for=dict() ):
+	method = method.lower()
+	kwz, func = dict(), getattr( requests, method,
+		ft.partial(_generic_request, method=method.upper()) )
+	if data is not None:
+		if method == 'post': kwz['data'] = data
+		else:
+			kwz['data'] = json.dumps(data)
+			headers = headers.copy()
+			headers.setdefault('Content-Type', 'application/json')
 	if files is not None: kwz['files'] = files
+	if headers is not None: kwz['headers'] = headers
 	try:
 		res = func(url, **kwz)
 		code = res.status_code
 		if code != requests.codes.ok: res.raise_for_status()
+		if code == requests.codes.no_content: return
 		return json.loads(res.text) if not raw else res.raw.read()
 	except requests.RequestException as err:
 		raise raise_for.get(code, ProtocolError)(err.message)
@@ -151,22 +167,36 @@ class SkyDriveAPI(SkyDriveAuth):
 			'{}?{}'.format(path, urllib.urlencode(query)) )
 
 	def __call__( self, url='me/skydrive', query=dict(),
-			query_filter=True, auto_refresh_token=True, **request_kwz ):
+			query_filter=True, auth_header=False,
+			auto_refresh_token=True, **request_kwz ):
 		if query_filter:
 			query = dict( (k,v) for k,v in
 				query.viewitems() if v is not None )
+		if auth_header:
+			request_kwz.setdefault('headers', dict())\
+				['Authorization'] = 'Bearer {}'.format(self.auth_access_token)
 		kwz = request_kwz.copy()
 		kwz.setdefault('raise_for', dict())[401] = AuthenticationError
-		try: return request(self._api_url(url, query), **kwz)
+		api_url = ft.partial( self._api_url, url, query,
+			pass_access_token=not auth_header )
+		try: return request(api_url(), **kwz)
 		except AuthenticationError:
 			if not auto_refresh_token: raise
 			self.auth_get_token()
-			return request(self._api_url(url, query), **request_kwz)
+			if auth_header:
+				request_kwz['headers']['authorization']\
+					= 'Bearer {}'.format(self.auth_access_token)
+			return request(api_url(), **request_kwz)
 
 
 	def get_quota(self):
 		'Return tuple of bytes_available, bytes_quota.'
 		return op.itemgetter('available', 'quota')(self('me/skydrive/quota'))
+
+
+	def info(self, obj_id='me/skydrive'):
+		'Return metadata of a specified object.'
+		return self(obj_id)
 
 	def listdir( self, folder_id='me/skydrive',
 			type_filter=None, limit=None, objects=None ):
@@ -176,7 +206,7 @@ class SkyDriveAPI(SkyDriveAuth):
 			objects flag allows to return a list of raw metadata objects
 				(with type, links, description, timestamps) instead of just ids.'''
 		if objects is None: objects = self.return_objects
-		lst = self(os.path.join(folder_id, 'files'), dict(limit=limit)).get('data', list())
+		lst = self(join(folder_id, 'files'), dict(limit=limit)).get('data', list())
 		if type_filter:
 			if isinstance(type_filter, types.StringTypes): type_filter = {type_filter}
 			lst = list(obj for obj in lst if obj['type'] in type_filter)
@@ -184,21 +214,68 @@ class SkyDriveAPI(SkyDriveAuth):
 			if not objects else dict((obj['name'], obj) for obj in lst)
 		return lst
 
-	def get(self, obj_id='me/skydrive'):
-		'Return metadata of a specified object.'
-		return self(obj_id)
-
-	def get_by_path(self, path, root_id='me/skydrive', objects=None):
+	def resolve_path( self, path,
+			root_id='me/skydrive', id_fallback=False, objects=None ):
 		'''Return id (or metadata) of an object, specified by chain
 				(iterable or fs-style path string) of "name" attributes of it's ancestors.
 			Requires a lot of calls to resolve each name in path, so use with care.
 			root_id parameter allows to specify path
 				 relative to some folder_id (default: me/skydrive).'''
 		if objects is None: objects = self.return_objects
-		if isinstance(path, types.StringTypes):
-			path = filter(None, path.split(os.sep))
-		for name in path: root_id = self.listdir(root_id)[name]
+		if path:
+			if isinstance(path, types.StringTypes):
+				if not path.startswith('me/skydrive'):
+					path = filter(None, path.split(os.sep))
+				else: root_id, path = path, None
+			if path:
+				root_lst = self.listdir(root_id)
+				try:
+					root_id = root_lst[path[0]]
+					for name in path[1:]: root_id = self.listdir(root_id)[name]
+				except KeyError:
+					if id_fallback and path in root_lst.viewvalues(): root_id = path
+					else: raise
 		return root_id if not objects else self.get(root_id)
+
+
+	def get(self, obj_id):
+		raise NotImplementedError()
+		return self(join(obj_id, 'content'), raw=True)
+
+	def put(self, path, folder_id='me/skydrive', overwrite=None):
+		return self(
+			join(folder_id, 'files'), dict(overwrite=overwrite),
+			method='post', files=dict(file=open(path)) )
+
+	def mkdir(self, obj_id):
+		raise NotImplementedError()
+		return self(obj_id, method='post')
+
+	def delete(self, obj_id):
+		return self(obj_id, method='delete')
+
+
+	def info_update(self, obj_id):
+		raise NotImplementedError()
+		# obj_id =~ folder.
+		return self(obj_id, method='put')
+
+	def info_link(self, obj_id, type='shared'):
+		raise NotImplementedError()
+		return self(join(obj_id, 'shared_read_link'), method='get')
+
+
+	def copy(self, obj_id, folder_id, move=False):
+		if folder_id.startswith('me/skydrive'):
+			log.info("Special folder names (like 'me/skydrive') don't"
+				" seem to work with copy/move operations, resolving it to id")
+			folder_id = self.info(folder_id)['id']
+		return self( obj_id,
+			method='copy' if not move else 'move',
+			data=dict(destination=folder_id), auth_header=True )
+
+	def move(self, obj_id, folder_id):
+		return self.copy(obj_id, folder_id, move=True)
 
 
 
