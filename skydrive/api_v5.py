@@ -8,17 +8,19 @@ import os, sys, math, urllib, urlparse, json
 import requests
 
 
-
 class SkyDriveInteractionError(Exception): pass
 
 class ProtocolError(SkyDriveInteractionError): pass
 class AuthenticationError(SkyDriveInteractionError): pass
 
 
-def request_post(url, data):
+def request(url, method='get', data=None, files=None, raw=False):
+	kwz, func = dict(), getattr(requests, method.lower())
+	if data is not None: kwz['data'] = data
+	if files is not None: kwz['files'] = files
 	try:
-		return json.loads(requests.post( url,
-			data=data, config=dict(danger_mode=True) ).text)
+		res = func(url, config=dict(danger_mode=True), **kwz)
+		return json.loads(res.text) if not raw else res.raw.read()
 	except requests.RequestException as err:
 		raise ProtocolError(err.message)
 
@@ -29,6 +31,13 @@ def urandom_hex(n):
 
 class SkyDriveAPIv5(object):
 
+	# Client id/secret should be static on per-application basis.
+	# Can be received from LiveConnect by any registered user at https://manage.dev.live.com/
+	# API ToS can be found here at http://msdn.microsoft.com/en-US/library/live/ff765012
+	client_id = client_secret = None
+
+	## Authentication
+
 	auth_url_user = 'https://login.live.com/oauth20_authorize.srf'
 	auth_url_token = 'https://login.live.com/oauth20_token.srf'
 	auth_scope = 'wl.skydrive', 'wl.skydrive_update', 'wl.offline_access'
@@ -37,16 +46,15 @@ class SkyDriveAPIv5(object):
 	# Set by auth_get_token, not used internally
 	auth_expires = auth_access_data_raw = None
 
-	# Should be static on per-application basis.
-	# Can be received from LiveConnect by any registered user at https://manage.dev.live.com/
-	# API ToS can be found here at http://msdn.microsoft.com/en-US/library/live/ff765012
-	client_id = client_secret = None
-
 	# At least one of these should be set before data requests.
 	auth_code = auth_refresh_token = auth_access_token = None
 
 	# This (default) redirect_uri is **special** - app must be marked as "mobile" to use it.
 	auth_redirect_uri = auth_redirect_uri_mobile
+
+	## API
+
+	api_url_base = 'https://apis.live.net/v5.0/'
 
 
 	def __init__(self, client_id=None, client_secret=None, urandom_len=16, **config):
@@ -101,7 +109,7 @@ class SkyDriveAPIv5(object):
 				' data provided (missing keys: {})'.format(post_data_missing_keys) )
 
 		res = self.auth_access_data_raw =\
-			request_post(self.auth_url_token, data=post_data)
+			request(self.auth_url_token, method='post', data=post_data)
 
 		assert res['token_type'] == 'bearer'
 		for k in 'access_token', 'refresh_token':
@@ -117,11 +125,29 @@ class SkyDriveAPIv5(object):
 		return scope_granted
 
 
+	def _api_url( self, path, query=dict(),
+			pass_access_token=True, pass_empty_values=False ):
+		if pass_access_token:
+			query.setdefault('access_token', self.auth_access_token)
+		if not pass_empty_values:
+			for k,v in query.viewitems():
+				if not v: raise ProtocolError('Empty key {!r} for API call (path: {})'.format(k, path))
+		return urlparse.urljoin( self.api_url_base,
+			'{}?{}'.format(path, urllib.urlencode(query)) )
+
+	def __call__(self, url='me/skydrive', **request_kwz):
+		return request(self._api_url(url), **request_kwz)
+
 
 if __name__ == '__main__':
+	import logging
+	logging.basicConfig(level=logging.DEBUG)
+
 	api = SkyDriveAPIv5.from_lcrc()
-	print(api.auth_user_get_url())
+	# print(api.auth_user_get_url())
 	# api.auth_user_process_url( 'https://login.live.com/'
 	# 	'oauth20_desktop.srf?code=d47e2f08-0851-cf5c-86c7-8fdcd9db128c&lc=1033' )
 	# print(api.auth_get_token())
 	# print(api.auth_access_data_raw)
+
+	print(api())
