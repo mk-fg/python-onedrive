@@ -11,7 +11,7 @@ to a simple python methods.
 Under heavy development, not ready for general usage yet.
 
 
-API notes
+LiveConnect/SkyDrive API notes
 --------------------
 
 Important: these details can (naturally) go obsolete, especially if timestamp of
@@ -31,11 +31,18 @@ through the API) can be provided though (recursive?), a bit like in tahoe-lafs,
 but probably without the actual crypto keys embedded in them (not much point as
 they're kept server-side along with the files anyway).
 
-Authentication is "[OAuth
-2.0](http://msdn.microsoft.com/en-us/library/live/hh243647.aspx)", which is
+Authentication is ["OAuth
+2.0"](http://msdn.microsoft.com/en-us/library/live/hh243647.aspx), which is
 quite ambigous all by itself, and especially when being implemented by
 well-known for it's proprietary "cripple-everything-else" extension creep
 Microsoft.
+It has a twist in authrization_code grant flow for "mobile" apps, where bearer
+token refresh can be performed without having to provide client_secret. Client
+app must be marked as "mobile" in [DevCenter](https://manage.dev.live.com/) for
+that to work.
+There's also totally LiveConnect-specific "Sign-In" auth flow.
+Access tokens for SkyDrive scopes (plus wl.offline) seem to be issued with ttl
+of one hour.
 
 All but a few default paths (like "my_documents") are accessed by file/folder
 IDs, which are not derived from their names or paths in any obvious way and look
@@ -49,7 +56,10 @@ Errors can be returned for most ops, encoded as JSON in responses and have a
 human-readable "code" (like "resource_quota_exceeded") and descriptive
 "message".
 
-API allows to request image-previews of an items.
+Files have a lot of metadata attached to them, parsed from their contents (exif
+data for photos, office documents metadata, etc).
+API allows to request image-previews of an items, links to which are also
+available in file (object) metadata.
 
 According to [SkyDrive interaction
 guidelines](http://msdn.microsoft.com/en-us/library/live/hh826545#guidelines),
