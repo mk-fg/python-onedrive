@@ -19,6 +19,13 @@ except ImportError:
 def print_result(data):
 	yaml.safe_dump(data, sys.stdout, default_flow_style=False)
 
+def size_units( size,
+		_units = list(reversed(list( (u,2**(i*10))
+			for i,u in enumerate('BKMGT') ))) ):
+	for u,u1 in _units:
+		if size > u1: break
+	return size / float(u1), u
+
 def main():
 	import argparse
 	parser = argparse.ArgumentParser(
@@ -35,6 +42,9 @@ def main():
 		action='store_true', help='Verbose operation mode.')
 
 	cmds = parser.add_subparsers(title='Supported operations')
+
+	cmd = cmds.add_parser('quota', help='Print quota information.')
+	cmd.set_defaults(call='quota')
 
 	cmd = cmds.add_parser('ls', help='List folder contents.')
 	cmd.set_defaults(call='ls')
@@ -61,17 +71,26 @@ def main():
 		if not optz.debug else logging.DEBUG)
 
 	api = api_v5.PersistentSkyDriveAPI.from_conf(optz.config)
+	res = None
 
-	if optz.call == 'ls':
+	if optz.call == 'quota':
+		df, ds = map(size_units, api.get_quota())
+		res = dict(free='{:.1f}{}'.format(*df), quota='{:.1f}{}'.format(*ds))
+
+	elif optz.call == 'ls':
 		if optz.path: optz.folder = api.get_by_path(optz.folder)
-		print_result(api.listdir(optz.folder))
+		res = api.listdir(optz.folder)
 
-	if optz.call == 'info':
+	elif optz.call == 'info':
 		if optz.path: optz.object = api.get_by_path(optz.object)
-		print_result(api.get(optz.object))
+		res = api.get(optz.object)
 
-	if optz.call == 'get': raise NotImplementedError()
-	if optz.call == 'put': raise NotImplementedError()
+	elif optz.call == 'get': raise NotImplementedError()
+	elif optz.call == 'put': raise NotImplementedError()
+
+	else: parser.error('Unrecognized command: {}'.format(optz.call))
+
+	if res is not None: print_result(res)
 
 
 if __name__ == '__main__': main()
