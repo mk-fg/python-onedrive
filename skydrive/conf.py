@@ -18,7 +18,7 @@ class ConfigMixin(object):
 	# Only keys listed here will be checked and (possibly) added
 	conf_keys = dict(
 		client={'id', 'secret'},
-		auth={'code', 'access_token', 'refresh_token'} )
+		auth={'code', 'refresh_token', 'access_expires', 'access_token'} )
 
 
 	def __init__(self, **kwz):

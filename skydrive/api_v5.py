@@ -4,7 +4,7 @@ from __future__ import unicode_literals, print_function
 
 import itertools as it, operator as op, functools as ft
 from datetime import datetime, timedelta
-import os, sys, math, urllib, urlparse, json
+import os, sys, math, urllib, urlparse, json, types
 import requests
 
 from .conf import ConfigMixin
@@ -56,7 +56,7 @@ class SkyDriveAuth(object):
 	auth_redirect_uri_mobile = 'https://login.live.com/oauth20_desktop.srf'
 
 	# Set by auth_get_token, not used internally
-	auth_expires = auth_access_data_raw = None
+	auth_access_expires = auth_access_data_raw = None
 
 	# At least one of these should be set before data requests.
 	auth_code = auth_refresh_token = auth_access_token = None
@@ -119,8 +119,8 @@ class SkyDriveAuth(object):
 		assert res['token_type'] == 'bearer'
 		for k in 'access_token', 'refresh_token':
 			if k in res: setattr(self, 'auth_{}'.format(k), res[k])
-		self.auth_expires = None if 'expires_in' not in res\
-			else (datetime.now() + timedelta(0, res['expires_in']))
+		self.auth_access_expires = None if 'expires_in' not in res\
+			else (datetime.utcnow() + timedelta(0, res['expires_in']))
 
 		scope_granted = res.get('scope', '').split()
 		if check_scope and set(self.auth_scope) != set(scope_granted):
@@ -135,6 +135,10 @@ class SkyDriveAPI(SkyDriveAuth):
 
 	api_url_base = 'https://apis.live.net/v5.0/'
 
+	# Return objects instead of ids by default from
+	#  methods where such parameter can be passed.
+	return_objects = False
+
 	def _api_url( self, path, query=dict(),
 			pass_access_token=True, pass_empty_values=False ):
 		query = query.copy()
@@ -146,24 +150,55 @@ class SkyDriveAPI(SkyDriveAuth):
 		return urlparse.urljoin( self.api_url_base,
 			'{}?{}'.format(path, urllib.urlencode(query)) )
 
-	def __call__( self, url='me/skydrive',
-			auto_refresh_token=True, **request_kwz ):
+	def __call__( self, url='me/skydrive', query=dict(),
+			query_filter=True, auto_refresh_token=True, **request_kwz ):
+		if query_filter:
+			query = dict( (k,v) for k,v in
+				query.viewitems() if v is not None )
 		kwz = request_kwz.copy()
 		kwz.setdefault('raise_for', dict())[401] = AuthenticationError
-		try: return request(self._api_url(url), **kwz)
+		try: return request(self._api_url(url, query), **kwz)
 		except AuthenticationError:
 			if not auto_refresh_token: raise
 			self.auth_get_token()
-			return request(self._api_url(url), **request_kwz)
+			return request(self._api_url(url, query), **request_kwz)
 
-	# def get_quota(self):
 
-	def list_folders(self, folder=None):
-		return self()
-	# def list_files(self, folder=None):
+	def get_quota(self):
+		'Return tuple of bytes_available, bytes_quota.'
+		return op.itemgetter('available', 'quota')(self('me/skydrive/quota'))
 
-	# def folder_create
-	# def folder_exists
+	def listdir( self, folder_id='me/skydrive',
+			type_filter=None, limit=None, objects=None ):
+		'''Return a dict ({name: id, ...}) of objects in the specified folder_id.
+			type_filter can be set to type (str) or sequence of object types to return.
+			limit is passed to the API, so might be used as optimization.
+			objects flag allows to return a list of raw metadata objects
+				(with type, links, description, timestamps) instead of just ids.'''
+		if objects is None: objects = self.return_objects
+		lst = self(os.path.join(folder_id, 'files'), dict(limit=limit)).get('data', list())
+		if type_filter:
+			if isinstance(type_filter, types.StringTypes): type_filter = {type_filter}
+			lst = list(obj for obj in lst if obj['type'] in type_filter)
+		lst = dict(it.imap(op.itemgetter('name', 'id'), lst))\
+			if not objects else dict((obj['name'], obj) for obj in lst)
+		return lst
+
+	def get(self, obj_id='me/skydrive'):
+		'Return metadata of a specified object.'
+		return self(obj_id)
+
+	def get_by_path(self, path, root_id='me/skydrive', objects=None):
+		'''Return id (or metadata) of an object, specified by chain
+				(iterable or fs-style path string) of "name" attributes of it's ancestors.
+			Requires a lot of calls to resolve each name in path, so use with care.
+			root_id parameter allows to specify path
+				 relative to some folder_id (default: me/skydrive).'''
+		if objects is None: objects = self.return_objects
+		if isinstance(path, types.StringTypes):
+			path = filter(None, path.split(os.sep))
+		for name in path: root_id = self.listdir(root_id)[name]
+		return root_id if not objects else self.get(root_id)
 
 
 
