@@ -36,5 +36,13 @@ setup(
 		'Topic :: System :: Archiving',
 		'Topic :: System :: Filesystems' ],
 
+	install_requires = ['requests'],
+	extras_require = {'cli': ['PyYAML']},
+
 	packages = find_packages(),
-	include_package_data = True )
+	include_package_data = True,
+	# package_data = ... <-- ignored for sdist in some setuptools/distribute versions
+	exclude_package_data = {'': ['README.*']},
+
+	entry_points = dict(console_scripts=[
+		'skydrive-cli = skydrive.cli_tool:main' ]) )
