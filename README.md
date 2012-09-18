@@ -21,16 +21,6 @@ Issue pointing to the inconsistency.
 It's quite a conventional REST API with JSON encoding of structured data, like
 pretty much every other trendy modern API, say, github.
 
-Permissions are set per-path, are inherited for the created objects and
-**cannot** be changed through the API, only through the Web UI (or maybe
-proprietary windows interfaces as well).
-
-Accessible to everyone URL links (of different types - embedded, read-only,
-read-write, preauthenticated) to any restricted-access object (that is reachable
-through the API) can be provided though (recursive?), a bit like in tahoe-lafs,
-but probably without the actual crypto keys embedded in them (not much point as
-they're kept server-side along with the files anyway).
-
 Authentication is ["OAuth
 2.0"](http://msdn.microsoft.com/en-us/library/live/hh243647.aspx), which is
 quite ambigous all by itself, and especially when being implemented by
@@ -44,10 +34,26 @@ There's also totally LiveConnect-specific "Sign-In" auth flow.
 Access tokens for SkyDrive scopes (plus wl.offline) seem to be issued with ttl
 of one hour.
 
+Permissions are set per-path, are inherited for the created objects and
+**cannot** be changed through the API, only through the Web UI (or maybe
+proprietary windows interfaces as well).
+
+Accessible to everyone URL links (of different types - embedded, read-only,
+read-write, preauthenticated) to any restricted-access object (that is reachable
+through the API) can be provided in "preauthenticated" form, a bit like in
+tahoe-lafs, but probably without the actual crypto keys embedded in them (not
+much point as they're kept server-side along with the files anyway).
+
 All but a few default paths (like "my_documents") are accessed by file/folder
-IDs, which are not derived from their names or paths in any obvious way and look
-like "folder.a6b2a7e8f2515e5e.A6B2A7E8F2515E5E!110".
-UI-visible names come on top of these as metadata.
+IDs.
+All IDs seem to be in the form of
+"{obj_type}.{uid_lowercase}.{uid_uppercase}!{obj_number}", where "obj_type" is a
+type of an object (e.g. "file", "folder", etc), "uid_*" is some 8-byte
+hex-encoded value, constant for all files/folders of the user, and "obj_number"
+is an integer value counting up from one for each uploaded file.
+
+UI-visible names come on top of these IDs as metadata (so "rename" is
+essentially a metadata "name" field update).
 Aforementioned "default paths" (like "my_documents") don't seem to work reliably
 with copy and move methods, unless resolved to folder_id proper.
 
@@ -73,7 +79,8 @@ advertises TLS 1.0 support ("openssl s_client -tls1 -showcerts -connect
 public.bay.livefilestore.com:443").
 Issue is known and generic workaround is documented as such in openssl project
 changelog.
-Newer "requests" module seem to have workaround for the issue implemented.
+Newer "requests" module seem to have workaround for the issue implemented
+(0.14.0 seem to work, 0.10.8 does not).
 
 According to [SkyDrive interaction
 guidelines](http://msdn.microsoft.com/en-us/library/live/hh826545#guidelines),

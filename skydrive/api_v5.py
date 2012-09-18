@@ -26,17 +26,11 @@ class AuthenticationError(SkyDriveInteractionError): pass
 
 
 
-def _generic_request(*argz, **kwz):
-	# log.debug('Request data: {}, {}'.format(argz, kwz))
-	req = requests.Request(*argz, **kwz)
-	req.send()
-	return req.response
-
 def request( url, method='get', data=None, files=None,
 		raw=False, headers=dict(), raise_for=dict() ):
 	method = method.lower()
 	kwz, func = dict(), getattr( requests, method,
-		ft.partial(_generic_request, method=method.upper()) )
+		ft.partial(requests.request, method.upper()) )
 	if data is not None:
 		if method == 'post': kwz['data'] = data
 		else:
@@ -246,7 +240,7 @@ class SkyDriveAPI(SkyDriveAuth):
 	def put(self, path, folder_id='me/skydrive', overwrite=None):
 		return self(
 			join(folder_id, 'files'), dict(overwrite=overwrite),
-			method='post', files=dict(file=open(path)) )
+			method='post', files=dict(file=(basename(path), open(path))) )
 
 	def mkdir(self, obj_id):
 		raise NotImplementedError()
@@ -256,14 +250,12 @@ class SkyDriveAPI(SkyDriveAuth):
 		return self(obj_id, method='delete')
 
 
-	def info_update(self, obj_id):
-		raise NotImplementedError()
-		# obj_id =~ folder.
-		return self(obj_id, method='put')
+	def info_update(self, obj_id, data):
+		return self(obj_id, method='put', data=data, auth_header=True)
 
-	def info_link(self, obj_id, type='shared'):
-		raise NotImplementedError()
-		return self(join(obj_id, 'shared_read_link'), method='get')
+	def info_link(self, obj_id, link_type='shared_read_link'):
+		assert link_type in ['embed', 'shared_read_link', 'shared_edit_link']
+		return self(join(obj_id, link_type), method='get')
 
 
 	def copy(self, obj_id, folder_id, move=False):
@@ -277,6 +269,16 @@ class SkyDriveAPI(SkyDriveAuth):
 
 	def move(self, obj_id, folder_id):
 		return self.copy(obj_id, folder_id, move=True)
+
+
+	def comments(self, obj_id):
+		return self(join(obj_id, 'comments'))['data']
+	def comment_add(self, obj_id, message):
+		return self( join(obj_id, 'comments'), method='post',
+			data=dict(message=message), auth_header=True )
+	def comment_delete(self, comment_id):
+		return self(comment_id, method='delete')
+
 
 
 
