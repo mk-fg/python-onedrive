@@ -211,7 +211,7 @@ class SkyDriveAPI(SkyDriveAuth):
 		return lst
 
 	def resolve_path( self, path,
-			root_id='me/skydrive', id_fallback=False, objects=None ):
+			root_id='me/skydrive', objects=None ):
 		'''Return id (or metadata) of an object, specified by chain
 				(iterable or fs-style path string) of "name" attributes of it's ancestors.
 			Requires a lot of calls to resolve each name in path, so use with care.
@@ -224,13 +224,7 @@ class SkyDriveAPI(SkyDriveAuth):
 					path = filter(None, path.split(os.sep))
 				else: root_id, path = path, None
 			if path:
-				root_lst = self.listdir(root_id)
-				try:
-					root_id = root_lst[path[0]]
-					for name in path[1:]: root_id = self.listdir(root_id)[name]
-				except KeyError:
-					if id_fallback and path in root_lst.viewvalues(): root_id = path
-					else: raise
+				for name in path: root_id = self.listdir(root_id)[name]
 		return root_id if not objects else self.get(root_id)
 
 
@@ -253,7 +247,7 @@ class SkyDriveAPI(SkyDriveAuth):
 	def info_update(self, obj_id, data):
 		return self(obj_id, method='put', data=data, auth_header=True)
 
-	def info_link(self, obj_id, link_type='shared_read_link'):
+	def link(self, obj_id, link_type='shared_read_link'):
 		assert link_type in ['embed', 'shared_read_link', 'shared_edit_link']
 		return self(join(obj_id, link_type), method='get')
 

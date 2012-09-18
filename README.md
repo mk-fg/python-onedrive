@@ -53,7 +53,7 @@ Then just type whatever commands you want to (and don't forget `skydrive-cli
 			image1.jpg: photo
 			image2.jpg: photo
 
-	% skydrive-cli -p get Pics/image1.jpg > downloaded_image1.jpg
+	% skydrive-cli get Pics/image1.jpg > downloaded_image1.jpg
 	% skydrive-cli put downloaded_image1.jpg
 	% skydrive-cli ls
 
@@ -68,7 +68,12 @@ Then just type whatever commands you want to (and don't forget `skydrive-cli
 	free: 25.0G
 	quota: 24.9G
 
-	% skydrive-cli -p rm downloaded_image1.jpg
+	% skydrive-cli link -t embed downloaded_image1.jpg
+
+	embed_html: <iframe src="https://skydrive.live.com/embed?cid=..."
+		width="98" height="120" frameborder="0" scrolling="no"></iframe>
+
+	% skydrive-cli rm downloaded_image1.jpg
 	% skydrive-cli rm -h
 
 	usage: skydrive-cli rm [-h] object [object ...]
@@ -83,12 +88,11 @@ Then just type whatever commands you want to (and don't forget `skydrive-cli
 
 	...
 
-Most commands should be self-descriptive (but see "--help" when they aren't).
+Most commands should be self-descriptive, but use "--help" when they aren't.
 
-"-p" (or "--path") option used in the examples above allows to specify
-human-readable paths like "Pics/image1.jpg" instead of object ids (like
-"file.e8bc837a02261f14.E8BC837A02261F14!114"), resolving these to ids before
-executing the actual commands.
+Note that objects specified on the command-line are implicitly resolved as
+human-readable paths (which are basically metadata) unless they look like an id.
+Use "-p" or "-i" ("--path" / "--id") switches to control this explicitly.
 See LiveConnect docs or notes section below for more info on how these work.
 
 

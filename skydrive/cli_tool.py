@@ -5,7 +5,7 @@ from __future__ import unicode_literals, print_function
 
 import itertools as it, operator as op, functools as ft
 from os.path import dirname, exists, isdir, join
-import os, sys, yaml, json
+import os, sys, re, yaml, json
 
 try: from skydrive import api_v5, conf
 except ImportError:
@@ -26,6 +26,10 @@ def size_units( size,
 		if size > u1: break
 	return size / float(u1), u
 
+def id_match( s,
+		_re_id=re.compile(r'^(file|folder)\.[0-9a-f]+\.[0-9A-F]+!\d+$') ):
+	return s if _re_id.search(s) else None
+
 def main():
 	import argparse
 	parser = argparse.ArgumentParser(
@@ -38,9 +42,9 @@ def main():
 			' Default: %(default)s')
 
 	parser.add_argument('-p', '--path', action='store_true',
-		help='Try to interpret file/folder arguments as human paths as well.')
-	parser.add_argument('--path-only', action='store_true',
-		help='Interpret file/folder arguments only as human paths, not ids. Overrides --path.')
+		help='Interpret file/folder arguments only as human paths, not ids (default: guess).')
+	parser.add_argument('-i', '--id', action='store_true',
+		help='Interpret file/folder arguments only as ids (default: guess).')
 
 	parser.add_argument('--debug',
 		action='store_true', help='Verbose operation mode.')
@@ -64,11 +68,10 @@ def main():
 		help='JSON mapping of values to set'
 			' (example: {"name": "new_file_name.jpg"}).')
 
-	cmd = cmds.add_parser('info_link', help='Get a link to a file.')
-	cmd.set_defaults(call='info_link')
+	cmd = cmds.add_parser('link', help='Get a link to a file.')
+	cmd.set_defaults(call='link')
 	cmd.add_argument('object', help='Object to get link for.')
-	cmd.add_argument('type',
-		nargs='?', default='shared_read_link',
+	cmd.add_argument('-t', '--type', default='shared_read_link',
 		help='Type of link to request. Possible values'
 			' (default: %(default)s): shared_read_link, embed, shared_edit_link.')
 
@@ -136,7 +139,8 @@ def main():
 		help='Folder to display contents of (default: %(default)s).')
 
 	optz = parser.parse_args()
-	if optz.path_only: optz.path = True
+	if optz.path and optz.id:
+		parser.error('--path and --id options cannot be used together.')
 
 	import logging
 	log = logging.getLogger()
@@ -145,9 +149,8 @@ def main():
 
 	api = api_v5.PersistentSkyDriveAPI.from_conf(optz.config)
 	res = None
-	resolve_path = ft.partial(
-			api.resolve_path, id_fallback=not optz.path_only )\
-		if optz.path else lambda path: path
+	resolve_path = ( (lambda s: id_match(s) or api.resolve_path(s))\
+		if not optz.path else api.resolve_path ) if not optz.id else lambda obj_id: obj_id
 
 	if optz.call == 'quota':
 		df, ds = map(size_units, api.get_quota())
@@ -160,8 +163,8 @@ def main():
 	elif optz.call == 'info_set':
 		api.info_update(
 			resolve_path(optz.object), json.loads(optz.data) )
-	elif optz.call == 'info_link':
-		res = api.info_link(resolve_path(optz.object), optz.type)
+	elif optz.call == 'link':
+		res = api.link(resolve_path(optz.object), optz.type)
 
 	elif optz.call == 'comments':
 		res = api.comments(resolve_path(optz.object))
