@@ -70,8 +70,8 @@ Then just type whatever commands you want to (and don't forget `skydrive-cli
 
 	% skydrive-cli quota
 
-	free: 25.0G
-	quota: 24.9G
+	free: 24.9G
+	quota: 25.0G
 
 	% skydrive-cli link -t embed downloaded_image1.jpg
 
