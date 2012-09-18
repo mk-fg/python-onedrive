@@ -67,6 +67,10 @@ def main():
 	cmd.add_argument('file', help='File (object) to read.')
 	cmd = cmds.add_parser('put', help='Upload a file.')
 	cmd.set_defaults(call='put')
+	cmd.add_argument('file', help='Path to a local file to upload.')
+	cmd.add_argument('folder',
+		nargs='?', default='me/skydrive', help='Folder to put file into.')
+	cmd.add_argument('-n', '--no-overwrite', help='Do not overwrite existing files.')
 
 	cmd = cmds.add_parser('cp', help='Copy file to a folder.')
 	cmd.set_defaults(call='cp')
@@ -109,7 +113,10 @@ def main():
 	elif optz.call == 'get':
 		sys.stdout.write(api.get(resolve_path(optz.file)))
 		sys.stdout.flush()
-	elif optz.call == 'put': raise NotImplementedError()
+	elif optz.call == 'put':
+		api.put( optz.file,
+			resolve_path(optz.folder),
+			overwrite=not optz.no_overwrite )
 
 	elif optz.call in ['cp', 'mv']:
 		argz = map(resolve_path, [optz.file, optz.folder])
