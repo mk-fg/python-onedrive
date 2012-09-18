@@ -27,7 +27,7 @@ class AuthenticationError(SkyDriveInteractionError): pass
 
 
 def _generic_request(*argz, **kwz):
-	log.debug('Request data: {}, {}'.format(argz, kwz))
+	# log.debug('Request data: {}, {}'.format(argz, kwz))
 	req = requests.Request(*argz, **kwz)
 	req.send()
 	return req.response
@@ -45,12 +45,14 @@ def request( url, method='get', data=None, files=None,
 			headers.setdefault('Content-Type', 'application/json')
 	if files is not None: kwz['files'] = files
 	if headers is not None: kwz['headers'] = headers
+	code = None
 	try:
 		res = func(url, **kwz)
+		# log.debug('Response headers: {}'.format(res.headers))
 		code = res.status_code
 		if code != requests.codes.ok: res.raise_for_status()
 		if code == requests.codes.no_content: return
-		return json.loads(res.text) if not raw else res.raw.read()
+		return json.loads(res.text) if not raw else res.content
 	except requests.RequestException as err:
 		raise raise_for.get(code, ProtocolError)(err.message)
 
@@ -177,8 +179,8 @@ class SkyDriveAPI(SkyDriveAuth):
 				['Authorization'] = 'Bearer {}'.format(self.auth_access_token)
 		kwz = request_kwz.copy()
 		kwz.setdefault('raise_for', dict())[401] = AuthenticationError
-		api_url = ft.partial( self._api_url, url, query,
-			pass_access_token=not auth_header )
+		api_url = ft.partial( self._api_url,
+			url, query, pass_access_token=not auth_header )
 		try: return request(api_url(), **kwz)
 		except AuthenticationError:
 			if not auto_refresh_token: raise
@@ -239,8 +241,7 @@ class SkyDriveAPI(SkyDriveAuth):
 
 
 	def get(self, obj_id):
-		raise NotImplementedError()
-		return self(join(obj_id, 'content'), raw=True)
+		return self(join(obj_id, 'content'), dict(download='true'), raw=True)
 
 	def put(self, path, folder_id='me/skydrive', overwrite=None):
 		return self(

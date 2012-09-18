@@ -63,6 +63,13 @@ data for photos, office documents metadata, etc).
 API allows to request image-previews of an items, links to which are also
 available in file (object) metadata.
 
+Actual fetching of files seem to be done through
+https://public.bay.livefilestore.com, but TLS there doesn't seem to work with
+curl or python "requests" module, only with browsers.
+Most likely some strict subset of protocols (like TLS 1.1+) is used there (it'd
+probably make sense in light of late security situation), which aren't supported
+by such simple tools.
+
 According to [SkyDrive interaction
 guidelines](http://msdn.microsoft.com/en-us/library/live/hh826545#guidelines),
 it is discouraged (though not explicitly prohibited) to upload files in

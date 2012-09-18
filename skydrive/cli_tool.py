@@ -62,8 +62,9 @@ def main():
 		nargs='?', default='me/skydrive',
 		help='Object to get info on (default: %(default)s).' )
 
-	cmd = cmds.add_parser('get', help='Download a file.')
+	cmd = cmds.add_parser('get', help='Download file contents.')
 	cmd.set_defaults(call='get')
+	cmd.add_argument('file', help='File (object) to read.')
 	cmd = cmds.add_parser('put', help='Upload a file.')
 	cmd.set_defaults(call='put')
 
@@ -105,7 +106,9 @@ def main():
 	elif optz.call == 'ls': res = api.listdir(resolve_path(optz.folder))
 	elif optz.call == 'info': res = api.info(resolve_path(optz.object))
 
-	elif optz.call == 'get': raise NotImplementedError()
+	elif optz.call == 'get':
+		sys.stdout.write(api.get(resolve_path(optz.file)))
+		sys.stdout.flush()
 	elif optz.call == 'put': raise NotImplementedError()
 
 	elif optz.call in ['cp', 'mv']:
