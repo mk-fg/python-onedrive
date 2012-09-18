@@ -39,7 +39,12 @@ with the contents like these:
 (use "id" and "secret" acquired in the app registration step above, indent these
 lines with spaces)
 
--- OAuth 2.0 consent step missing here --
+Then you need to perform OAuth 2.0 authorization dance by running the
+`skydrive-cli auth` command and following printed instructions (visit printed
+URL, authorize, click "Allow", paste last URL back into terminal).
+This will get you authorization_code (which will be stored in ~/.lcrc) to use
+the API as a user you've logged-in as there. Repeat this step to authorize with
+a different account, if necessary.
 
 Then just type whatever commands you want to (and don't forget `skydrive-cli
 --help`):

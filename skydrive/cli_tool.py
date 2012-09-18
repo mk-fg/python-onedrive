@@ -51,6 +51,11 @@ def main():
 
 	cmds = parser.add_subparsers(title='Supported operations')
 
+	cmd = cmds.add_parser('auth', help='Perform user authentication.')
+	cmd.set_defaults(call='auth')
+	cmd.add_argument('url', nargs='?',
+		help='URL with the authorization_code.')
+
 	cmd = cmds.add_parser('quota', help='Print quota information.')
 	cmd.set_defaults(call='quota')
 
@@ -152,7 +157,22 @@ def main():
 	resolve_path = ( (lambda s: id_match(s) or api.resolve_path(s))\
 		if not optz.path else api.resolve_path ) if not optz.id else lambda obj_id: obj_id
 
-	if optz.call == 'quota':
+	if optz.call == 'auth':
+		if not optz.url:
+			print( 'Visit the following URL in any web browser (firefox, chrome, safari, etc),\n'
+				'  authorize there, confirm access permissions, and paste URL of an empty page\n'
+				'  (starting with "https://login.live.com/oauth20_desktop.srf")'
+				' you will get redirected to in the end.' )
+			print( 'Alternatively, use the returned (after redirects)'
+				' URL with "{} auth <URL>" command.\n'.format(sys.argv[0]) )
+			print('URL to visit: {}\n'.format(api.auth_user_get_url()))
+			optz.url = raw_input('URL after last redirect: ').strip()
+		if optz.url:
+			api.auth_user_process_url(optz.url)
+			api.auth_get_token()
+			print('API authorization was completed successfully.')
+
+	elif optz.call == 'quota':
 		df, ds = map(size_units, api.get_quota())
 		res = dict(free='{:.1f}{}'.format(*df), quota='{:.1f}{}'.format(*ds))
 
