@@ -6,13 +6,13 @@ import os
 pkg_root = os.path.dirname(__file__)
 
 # Error-handling here is to allow package to be built w/o README included
-try: readme = open(os.path.join(pkg_root, 'README.md')).read()
+try: readme = open(os.path.join(pkg_root, 'README.txt')).read()
 except IOError: readme = ''
 
 setup(
 
 	name = 'python-skydrive',
-	version = '12.09.19',
+	version = '12.09.20',
 	author = 'Mike Kazantsev',
 	author_email = 'mk.fraggod@gmail.com',
 	license = 'WTFPL',
