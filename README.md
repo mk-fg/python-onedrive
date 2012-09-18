@@ -8,8 +8,97 @@ This module allows to access data on Microsoft SkyDrive cloud storage from
 python code, abstracting authentication, http requests and response processing
 to a simple python methods.
 
-Also comes with command-line tool to conveniently browse and manipulate SkyDrive
-contents from interactive shell or scripts.
+Module also comes with command-line tool to conveniently browse and manipulate
+SkyDrive contents from interactive shell or scripts.
+
+
+
+Command-line usage
+----------------------------------------
+
+SkyDrive API requires to register an application in
+[DevCenter](https://manage.dev.live.com/), providing you with client_id and
+client_secret strings, used for authentication.
+
+I can't provide some static ones because according to LiveConnect ToS "You are
+solely and entirely responsible for all uses of Live Connect occurring under
+your Client ID" (also see notes below), and I can't just vouch for every
+module/tool user like that.
+
+App registration in DevCenter is really straightforward and shouldn't take more
+than a few clicks.
+Be sure to check the "mobile client app" box under "API settings".
+
+After that, create "~/.lcrc" file ([YAML](https://en.wikipedia.org/wiki/YAML))
+with the contents like these:
+
+	client:
+	  id: 00000000620A3E4A
+	  secret: gndrjIOLWYLkOPl0QhWIliQcg-MG1SRN
+
+(use "id" and "secret" acquired in the app registration step above, indent these
+lines with spaces)
+
+-- OAuth 2.0 consent step missing here --
+
+Then just type whatever commands you want to (and don't forget `skydrive-cli
+--help`):
+
+	% skydrive-cli tree
+
+	SkyDrive:
+		Documents:
+			README.txt: file
+		Pics:
+			image1.jpg: photo
+			image2.jpg: photo
+
+	% skydrive-cli -p get Pics/image1.jpg > downloaded_image1.jpg
+	% skydrive-cli put downloaded_image1.jpg
+	% skydrive-cli ls
+
+	Documents: folder.e8bc837a02261f14.E8BC837A02261F14!102
+	Pics: folder.e8bc837a02261f14.E8BC837A02261F14!106
+	downloaded_image1.jpg: file.e8bc837a02261f14.E8BC837A02261F14!114
+
+	# (incomprehensible stuff on the right are file/folder ids)
+
+	% skydrive-cli quota
+
+	free: 25.0G
+	quota: 24.9G
+
+	% skydrive-cli -p rm downloaded_image1.jpg
+	% skydrive-cli rm -h
+
+	usage: skydrive-cli rm [-h] object [object ...]
+
+	positional arguments:
+	  object      Object(s) to remove.
+
+	optional arguments:
+	  -h, --help  show this help message and exit
+
+	% skydrive-cli -h
+
+	...
+
+Most commands should be self-descriptive (but see "--help" when they aren't).
+
+"-p" (or "--path") option used in the examples above allows to specify
+human-readable paths like "Pics/image1.jpg" instead of object ids (like
+"file.e8bc837a02261f14.E8BC837A02261F14!114"), resolving these to ids before
+executing the actual commands.
+See LiveConnect docs or notes section below for more info on how these work.
+
+
+
+Module usage
+----------------------------------------
+
+See
+[skydrive/cli_tool.py](https://github.com/mk-fg/python-skydrive/blob/master/skydrive/cli_tool.py)
+for real-world API usage examples.
 
 
 
