@@ -12,14 +12,15 @@ except IOError: readme = ''
 setup(
 
 	name = 'python-skydrive',
-	version = '12.09.20',
+	version = '12.09.21',
 	author = 'Mike Kazantsev',
 	author_email = 'mk.fraggod@gmail.com',
 	license = 'WTFPL',
 	keywords = 'skydrive api oauth2 rest microsoft cloud live liveconnect',
 	url = 'http://github.com/mk-fg/python-skydrive',
 
-	description = 'Python interface to Microsoft LiveConnect SkyDrive REST API v5.0',
+	description = 'Python and command-line interface'
+		' for Microsoft LiveConnect SkyDrive REST API v5.0',
 	long_description = readme,
 
 	classifiers = [

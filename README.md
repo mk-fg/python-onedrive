@@ -1,14 +1,14 @@
 python-skydrive
 ----------------------------------------
 
-Python interface to [SkyDrive API (version
+Python and command-line interface for [SkyDrive API (version
 5.0)](http://msdn.microsoft.com/en-us/library/live/hh826521).
 
 This module allows to access data on Microsoft SkyDrive cloud storage from
 python code, abstracting authentication, http requests and response processing
 to a simple python methods.
 
-Also comes with commandline tool to conveniently browse and manipulate SkyDrive
+Also comes with command-line tool to conveniently browse and manipulate SkyDrive
 contents from interactive shell or scripts.
 
 
