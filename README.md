@@ -1,18 +1,72 @@
 python-skydrive
---------------------
+----------------------------------------
 
-Python interface to [SkyDrive
-API](http://msdn.microsoft.com/en-us/library/live/hh826521).
+Python interface to [SkyDrive API (version
+5.0)](http://msdn.microsoft.com/en-us/library/live/hh826521).
 
 This module allows to access data on Microsoft SkyDrive cloud storage from
 python code, abstracting authentication, http requests and response processing
 to a simple python methods.
 
-Under heavy development, not ready for general usage yet.
+Also comes with commandline tool to conveniently browse and manipulate SkyDrive
+contents from interactive shell or scripts.
 
 
-LiveConnect/SkyDrive API notes
---------------------
+
+Installation
+----------------------------------------
+
+It's a regular package for Python 2.7 (not 3.X).
+
+Using [pip](http://pip-installer.org/) is the best way:
+
+	% pip install python-skydrive
+
+If you don't have it, use:
+
+	% easy_install pip
+	% pip install python-skydrive
+
+Alternatively ([see
+also](http://www.pip-installer.org/en/latest/installing.html)):
+
+	% curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
+	% pip install python-skydrive
+
+Or, if you absolutely must:
+
+	% easy_install python-skydrive
+
+But, you really shouldn't do that.
+
+Current-git version can be installed like this:
+
+	% pip install 'git+https://github.com/mk-fg/python-skydrive.git#egg=python-skydrive'
+
+Note that to install stuff in system-wide PATH and site-packages, elevated
+privileges are often required.
+Use "install --user",
+[~/.pydistutils.cfg](http://docs.python.org/install/index.html#distutils-configuration-files)
+or [virtualenv](http://pypi.python.org/pypi/virtualenv) to do unprivileged
+installs into custom paths.
+
+Alternatively, `./skydrive-cli` tool can be run right from the checkout tree
+without any installation, if that's the only thing you need there.
+
+
+### Requirements
+
+* [Python 2.7 (not 3.X)](http://python.org/)
+
+* [requests](http://docs.python-requests.org/en/latest/)
+
+* (optional, recommended) [PyYAML](http://pyyaml.org) - required for CLI tool
+	and optional persistent-state ("conf") module only.
+
+
+
+LiveConnect/SkyDrive API (v5.0) notes
+----------------------------------------
 
 Important: these details can (naturally) go obsolete, especially if timestamp of
 this doc is older than the one of the API docs, in which case please open an
@@ -44,12 +98,12 @@ through the API) can be provided in "preauthenticated" form, a bit like in
 tahoe-lafs, but probably without the actual crypto keys embedded in them (not
 much point as they're kept server-side along with the files anyway).
 
-All but a few default paths (like "my_documents") are accessed by file/folder
+All but a few default paths (like "my\_documents") are accessed by file/folder
 IDs.
 All IDs seem to be in the form of
-"{obj_type}.{uid_lowercase}.{uid_uppercase}!{obj_number}", where "obj_type" is a
-type of an object (e.g. "file", "folder", etc), "uid_*" is some 8-byte
-hex-encoded value, constant for all files/folders of the user, and "obj_number"
+"{obj\_type}.{uid\_lowercase}.{uid\_uppercase}!{obj\_number}", where "obj\_type"
+is a type of an object (e.g. "file", "folder", etc), "uid\_*" is some 8-byte
+hex-encoded value, constant for all files/folders of the user, and "obj\_number"
 is an integer value counting up from one for each uploaded file.
 
 UI-visible names come on top of these IDs as metadata (so "rename" is

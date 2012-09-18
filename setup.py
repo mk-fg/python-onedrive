@@ -12,14 +12,14 @@ except IOError: readme = ''
 setup(
 
 	name = 'python-skydrive',
-	version = '12.09.1',
+	version = '12.09.19',
 	author = 'Mike Kazantsev',
 	author_email = 'mk.fraggod@gmail.com',
 	license = 'WTFPL',
 	keywords = 'skydrive api oauth2 rest microsoft cloud live liveconnect',
 	url = 'http://github.com/mk-fg/python-skydrive',
 
-	description = 'Python interface to Microsoft LiveConnect SkyDrive REST API',
+	description = 'Python interface to Microsoft LiveConnect SkyDrive REST API v5.0',
 	long_description = readme,
 
 	classifiers = [
@@ -41,7 +41,7 @@ setup(
 
 	packages = find_packages(),
 	include_package_data = True,
-	# package_data = ... <-- ignored for sdist in some setuptools/distribute versions
+	package_data = {'': ['README.txt']},
 	exclude_package_data = {'': ['README.*']},
 
 	entry_points = dict(console_scripts=[
