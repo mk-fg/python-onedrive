@@ -119,9 +119,19 @@ def main():
 
 	cmd = cmds.add_parser('comment_delete', help='Delete comment from a file, object or folder.')
 	cmd.set_defaults(call='comment_delete')
-	cmd.add_argument( 'comment_id',
+	cmd.add_argument('comment_id',
 		help='ID of the comment to remove (use "comments"'
 			' action to get comment ids along with the messages).')
+
+	cmd = cmds.add_parser('tree',
+		help='Show contents of skydrive (or folder) as a tree of file/folder names.'
+			' Note that this operation will have to (separately) request a listing'
+				' of every folder under the specified one, so can be quite slow for large'
+				' number of these.')
+	cmd.set_defaults(call='tree')
+	cmd.add_argument('folder',
+		nargs='?', default='me/skydrive',
+		help='Folder to display contents of (default: %(default)s).')
 
 	optz = parser.parse_args()
 	if optz.path_only: optz.path = True
@@ -142,6 +152,7 @@ def main():
 		res = dict(free='{:.1f}{}'.format(*df), quota='{:.1f}{}'.format(*ds))
 
 	elif optz.call == 'ls': res = api.listdir(resolve_path(optz.folder))
+
 	elif optz.call == 'info': res = api.info(resolve_path(optz.object))
 	elif optz.call == 'info_set':
 		api.info_update(
@@ -169,6 +180,19 @@ def main():
 		(api.move if optz.call == 'mv' else api.copy)(*argz)
 
 	elif optz.call == 'rm': api.delete(resolve_path(optz.object))
+
+	elif optz.call == 'tree':
+		def recurse(obj_id):
+			try: res = api.listdir(obj_id)
+			except api_v5.ProtocolError as err:
+				if err.code == 400: return None # it's a file
+				raise
+			node = dict()
+			for obj_name, obj_id in res.viewitems():
+				node[obj_name] = recurse(obj_id)
+			return node
+		root_id = resolve_path(optz.folder)
+		res = {api.info(root_id)['name']: recurse(root_id)}
 
 	else: parser.error('Unrecognized command: {}'.format(optz.call))
 

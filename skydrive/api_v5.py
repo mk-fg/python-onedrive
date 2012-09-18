@@ -48,7 +48,7 @@ def request( url, method='get', data=None, files=None,
 		if code == requests.codes.no_content: return
 		return json.loads(res.text) if not raw else res.content
 	except requests.RequestException as err:
-		raise raise_for.get(code, ProtocolError)(err.message)
+		raise raise_for.get(code, ProtocolError)(err.message, code)
 
 def urandom_hex(n):
 	return os.urandom(int(math.ceil(n / 2.0))).encode('hex')[:n]
