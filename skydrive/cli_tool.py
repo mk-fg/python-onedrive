@@ -74,6 +74,8 @@ def main():
 
 	cmd = cmds.add_parser('ls', help='List folder contents.')
 	cmd.set_defaults(call='ls')
+	cmd.add_argument('-o', '--objects', action='store_true',
+		help='Dump full objects, not just name and id.')
 	cmd.add_argument('folder',
 		nargs='?', default='me/skydrive',
 		help='Folder to list contents of (default: %(default)s).')
@@ -106,7 +108,7 @@ def main():
 
 	cmd = cmds.add_parser('rm', help='Remove object (file or folder).')
 	cmd.set_defaults(call='rm')
-	cmd.add_argument('object', help='Object to remove.')
+	cmd.add_argument('object', nargs='+', help='Object(s) to remove.')
 
 	cmd = cmds.add_parser('comments', help='Show comments for a file, object or folder.')
 	cmd.set_defaults(call='comments')
@@ -151,7 +153,8 @@ def main():
 		df, ds = map(size_units, api.get_quota())
 		res = dict(free='{:.1f}{}'.format(*df), quota='{:.1f}{}'.format(*ds))
 
-	elif optz.call == 'ls': res = api.listdir(resolve_path(optz.folder))
+	elif optz.call == 'ls':
+		res = api.listdir(resolve_path(optz.folder), objects=optz.objects)
 
 	elif optz.call == 'info': res = api.info(resolve_path(optz.object))
 	elif optz.call == 'info_set':
@@ -179,17 +182,15 @@ def main():
 		argz = map(resolve_path, [optz.file, optz.folder])
 		(api.move if optz.call == 'mv' else api.copy)(*argz)
 
-	elif optz.call == 'rm': api.delete(resolve_path(optz.object))
+	elif optz.call == 'rm':
+		for obj in it.imap(resolve_path, optz.object): api.delete(obj)
 
 	elif optz.call == 'tree':
 		def recurse(obj_id):
-			try: res = api.listdir(obj_id)
-			except api_v5.ProtocolError as err:
-				if err.code == 400: return None # it's a file
-				raise
-			node = dict()
-			for obj_name, obj_id in res.viewitems():
-				node[obj_name] = recurse(obj_id)
+			node, res = dict(), api.listdir(obj_id, objects=True)
+			for obj_name, obj in res.viewitems():
+				node[obj_name] = recurse(obj['id'])\
+					if obj['type'] in ['folder', 'album'] else obj['type']
 			return node
 		root_id = resolve_path(optz.folder)
 		res = {api.info(root_id)['name']: recurse(root_id)}
