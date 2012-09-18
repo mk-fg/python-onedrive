@@ -64,11 +64,15 @@ API allows to request image-previews of an items, links to which are also
 available in file (object) metadata.
 
 Actual fetching of files seem to be done through
-https://public.bay.livefilestore.com, but TLS there doesn't seem to work with
-curl or python "requests" module, only with browsers.
-Most likely some strict subset of protocols (like TLS 1.1+) is used there (it'd
-probably make sense in light of late security situation), which aren't supported
-by such simple tools.
+https://public.bay.livefilestore.com, but TLS there doesn't work with
+curl or python "requests" module at the moment, only with browsers.
+Problem seem to be broken TLS implementation on the IIS server - it chokes if
+client advertise TLS 1.2 in "Client Hello" packet (e.g. "openssl s_client
+-showcerts -connect public.bay.livefilestore.com:443") and works if client only
+advertises TLS 1.0 support ("openssl s_client -tls1 -showcerts -connect
+public.bay.livefilestore.com:443").
+Issue is known and generic workaround is documented as such in openssl project
+changelog.
 
 According to [SkyDrive interaction
 guidelines](http://msdn.microsoft.com/en-us/library/live/hh826545#guidelines),
