@@ -36,7 +36,7 @@ setup(
 		'Topic :: System :: Archiving',
 		'Topic :: System :: Filesystems' ],
 
-	install_requires = ['requests'],
+	install_requires = ['requests >= 0.14.0'],
 	extras_require = {'cli': ['PyYAML']},
 
 	packages = find_packages(),

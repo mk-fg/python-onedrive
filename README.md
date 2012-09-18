@@ -73,6 +73,7 @@ advertises TLS 1.0 support ("openssl s_client -tls1 -showcerts -connect
 public.bay.livefilestore.com:443").
 Issue is known and generic workaround is documented as such in openssl project
 changelog.
+Newer "requests" module seem to have workaround for the issue implemented.
 
 According to [SkyDrive interaction
 guidelines](http://msdn.microsoft.com/en-us/library/live/hh826545#guidelines),
