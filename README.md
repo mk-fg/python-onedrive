@@ -62,11 +62,9 @@ Then just type whatever commands you want to (and don't forget `skydrive-cli
 	% skydrive-cli put downloaded_image1.jpg
 	% skydrive-cli ls
 
-	Documents: folder.e8bc837a02261f14.E8BC837A02261F14!102
-	Pics: folder.e8bc837a02261f14.E8BC837A02261F14!106
-	downloaded_image1.jpg: file.e8bc837a02261f14.E8BC837A02261F14!114
-
-	# (incomprehensible stuff on the right are file/folder ids)
+	- Documents
+	- Pics
+	- downloaded_image1.jpg
 
 	% skydrive-cli quota
 
@@ -97,6 +95,9 @@ Most commands should be self-descriptive, but use "--help" when they aren't.
 
 Note that objects specified on the command-line are implicitly resolved as
 human-readable paths (which are basically metadata) unless they look like an id.
+This might be undesirable from performance perspective (extra requests) and
+might be undesirable if non-unique "name" attributes of objects in the same
+parent folder are used.
 Use "-p" or "-i" ("--path" / "--id") switches to control this explicitly.
 See LiveConnect docs or notes section below for more info on how these work.
 
@@ -204,13 +205,16 @@ is a type of an object (e.g. "file", "folder", etc), "uid\_*" is some 8-byte
 hex-encoded value, constant for all files/folders of the user, and "obj\_number"
 is an integer value counting up from one for each uploaded file.
 
-UI-visible names come on top of these IDs as metadata (so "rename" is
-essentially a metadata "name" field update).
+UI-visible names come on top of these IDs as metadata, so "rename" is
+essentially a metadata "name" field update and two files/folders with the same
+"name" can co-exist in the same parent folder, though uploading a file defaults
+to overwriting file with same "name" (disableable).
+
 Aforementioned "default paths" (like "my_documents") don't seem to work reliably
 with copy and move methods, unless resolved to folder_id proper.
 
-There are some handy special API URLs for stuff like quota and a list of recent
-changes.
+There are some handy special SkyDrive-related API URLs for stuff like quota and
+a list of recent changes.
 
 Errors can be returned for most ops, encoded as JSON in responses and have a
 human-readable "code" (like "resource_quota_exceeded") and descriptive

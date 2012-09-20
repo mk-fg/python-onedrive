@@ -5,7 +5,7 @@ from __future__ import unicode_literals, print_function
 
 import itertools as it, operator as op, functools as ft
 from os.path import dirname, exists, isdir, join
-import os, sys, re, yaml, json
+import os, sys, io, re, yaml, json
 
 try: from skydrive import api_v5, conf
 except ImportError:
@@ -16,8 +16,8 @@ except ImportError:
 		from skydrive import api_v5, conf
 
 
-def print_result(data):
-	yaml.safe_dump(data, sys.stdout, default_flow_style=False)
+def print_result(data, file=sys.stdout):
+	yaml.safe_dump(data, file, default_flow_style=False)
 
 def size_units( size,
 		_units = list(reversed(list( (u,2**(i*10))
@@ -42,7 +42,9 @@ def main():
 			' Default: %(default)s')
 
 	parser.add_argument('-p', '--path', action='store_true',
-		help='Interpret file/folder arguments only as human paths, not ids (default: guess).')
+		help='Interpret file/folder arguments only as human paths, not ids (default: guess).'
+			' Avoid using such paths if non-unique "name" attributes'
+				' of objects in the same parent folder might be used.')
 	parser.add_argument('-i', '--id', action='store_true',
 		help='Interpret file/folder arguments only as ids (default: guess).')
 
@@ -88,9 +90,23 @@ def main():
 		nargs='?', default='me/skydrive',
 		help='Folder to list contents of (default: %(default)s).')
 
+	cmd = cmds.add_parser('mkdir', help='Create a folder.')
+	cmd.set_defaults(call='mkdir')
+	cmd.add_argument('name', help='Name of a folder to create.')
+	cmd.add_argument('folder',
+		nargs='?', default='me/skydrive',
+		help='Parent folder (default: %(default)s).')
+	cmd.add_argument('-m', '--metadata',
+		help='JSON mappings of metadata to set for the created folder.'
+			' Optonal. Example: {"description": "Photos from last trip to Mordor"}')
+
 	cmd = cmds.add_parser('get', help='Download file contents.')
 	cmd.set_defaults(call='get')
 	cmd.add_argument('file', help='File (object) to read.')
+	cmd.add_argument('-b', '--byte-range',
+		help='Specific range of bytes to read from a file (default: read all).'
+			' Should be specified in rfc2616 Range HTTP header format.'
+			' Examples: 0-499 (start - 499), -500 (end-500 to end).')
 
 	cmd = cmds.add_parser('put', help='Upload a file.')
 	cmd.set_defaults(call='put')
@@ -98,7 +114,8 @@ def main():
 	cmd.add_argument('folder',
 		nargs='?', default='me/skydrive',
 		help='Folder to put file into (default: %(default)s).')
-	cmd.add_argument('-n', '--no-overwrite', help='Do not overwrite existing files.')
+	cmd.add_argument('-n', '--no-overwrite', action='store_true',
+		help='Do not overwrite existing files with the same "name" attribute (visible name).')
 
 	cmd = cmds.add_parser('cp', help='Copy file to a folder.')
 	cmd.set_defaults(call='cp')
@@ -153,7 +170,7 @@ def main():
 		if not optz.debug else logging.DEBUG)
 
 	api = api_v5.PersistentSkyDriveAPI.from_conf(optz.config)
-	res = None
+	res = xres = None
 	resolve_path = ( (lambda s: id_match(s) or api.resolve_path(s))\
 		if not optz.path else api.resolve_path ) if not optz.id else lambda obj_id: obj_id
 
@@ -177,11 +194,12 @@ def main():
 		res = dict(free='{:.1f}{}'.format(*df), quota='{:.1f}{}'.format(*ds))
 
 	elif optz.call == 'ls':
-		res = api.listdir(resolve_path(optz.folder), objects=optz.objects)
+		res = list(api.listdir(resolve_path(optz.folder)))
+		if not optz.objects: res = map(op.itemgetter('name'), res)
 
 	elif optz.call == 'info': res = api.info(resolve_path(optz.object))
 	elif optz.call == 'info_set':
-		api.info_update(
+		xres = api.info_update(
 			resolve_path(optz.object), json.loads(optz.data) )
 	elif optz.call == 'link':
 		res = api.link(resolve_path(optz.object), optz.type)
@@ -193,34 +211,51 @@ def main():
 	elif optz.call == 'comment_delete':
 		res = api.comment_delete(optz.comment_id)
 
+	elif optz.call == 'mkdir':
+		xres = api.mkdir( name=optz.name, folder_id=resolve_path(optz.folder),
+			metadata=optz.metadata and json.loads(optz.metadata) or dict() )
+
 	elif optz.call == 'get':
-		sys.stdout.write(api.get(resolve_path(optz.file)))
+		sys.stdout.write(api.get(
+			resolve_path(optz.file), byte_range=optz.byte_range ))
 		sys.stdout.flush()
 	elif optz.call == 'put':
-		api.put( optz.file,
-			resolve_path(optz.folder),
-			overwrite=not optz.no_overwrite )
+		xres = api.put( optz.file,
+			resolve_path(optz.folder), overwrite=not optz.no_overwrite )
 
 	elif optz.call in ['cp', 'mv']:
 		argz = map(resolve_path, [optz.file, optz.folder])
-		(api.move if optz.call == 'mv' else api.copy)(*argz)
+		xres = (api.move if optz.call == 'mv' else api.copy)(*argz)
 
 	elif optz.call == 'rm':
-		for obj in it.imap(resolve_path, optz.object): api.delete(obj)
+		for obj in it.imap(resolve_path, optz.object): xres = api.delete(obj)
+
 
 	elif optz.call == 'tree':
+		from yaml.dumper import SafeDumper
+		class Pairs(list):
+			@staticmethod
+			def yaml_representer(dumper, data):
+				return dumper.represent_mapping('tag:yaml.org,2002:map', data)
+		SafeDumper.add_representer(Pairs, Pairs.yaml_representer)
+
 		def recurse(obj_id):
-			node, res = dict(), api.listdir(obj_id, objects=True)
-			for obj_name, obj in res.viewitems():
-				node[obj_name] = recurse(obj['id'])\
-					if obj['type'] in ['folder', 'album'] else obj['type']
+			node = Pairs()
+			for obj in api.listdir(obj_id):
+				node.append(( obj['name'], recurse(obj['id'])\
+					if obj['type'] in ['folder', 'album'] else obj['type'] ))
 			return node
+
 		root_id = resolve_path(optz.folder)
 		res = {api.info(root_id)['name']: recurse(root_id)}
 
 	else: parser.error('Unrecognized command: {}'.format(optz.call))
 
 	if res is not None: print_result(res)
+	if optz.debug and xres is not None:
+		buff = io.BytesIO()
+		print_result(xres, file=buff)
+		log.debug('Call result:\n{0}\n{1}{0}'.format('-'*20, buff.getvalue()))
 
 
 if __name__ == '__main__': main()

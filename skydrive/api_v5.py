@@ -147,10 +147,6 @@ class SkyDriveAPI(SkyDriveAuth):
 
 	api_url_base = 'https://apis.live.net/v5.0/'
 
-	# Return objects instead of ids by default from
-	#  methods where such parameter can be passed.
-	return_objects = False
-
 	def _api_url( self, path, query=dict(),
 			pass_access_token=True, pass_empty_values=False ):
 		query = query.copy()
@@ -165,6 +161,8 @@ class SkyDriveAPI(SkyDriveAuth):
 	def __call__( self, url='me/skydrive', query=dict(),
 			query_filter=True, auth_header=False,
 			auto_refresh_token=True, **request_kwz ):
+		'''Make an arbitrary call to LiveConnect API.
+			Shouldn't be used directly under most circumstances.'''
 		if query_filter:
 			query = dict( (k,v) for k,v in
 				query.viewitems() if v is not None )
@@ -179,80 +177,106 @@ class SkyDriveAPI(SkyDriveAuth):
 		except AuthenticationError:
 			if not auto_refresh_token: raise
 			self.auth_get_token()
-			if auth_header:
-				request_kwz['headers']['authorization']\
+			if auth_header: # update auth header with a new token
+				request_kwz['headers']['Authorization']\
 					= 'Bearer {}'.format(self.auth_access_token)
 			return request(api_url(), **request_kwz)
 
 
 	def get_quota(self):
-		'Return tuple of bytes_available, bytes_quota.'
+		'Return tuple of (bytes_available, bytes_quota).'
 		return op.itemgetter('available', 'quota')(self('me/skydrive/quota'))
 
-
 	def info(self, obj_id='me/skydrive'):
-		'Return metadata of a specified object.'
+		'''Return metadata of a specified object.
+			See http://msdn.microsoft.com/en-us/library/live/hh243648.aspx
+				for the list and description of metadata keys for each object type.'''
 		return self(obj_id)
 
-	def listdir( self, folder_id='me/skydrive',
-			type_filter=None, limit=None, objects=None ):
-		'''Return a dict ({name: id, ...}) of objects in the specified folder_id.
-			type_filter can be set to type (str) or sequence of object types to return.
+	def listdir(self, folder_id='me/skydrive', type_filter=None, limit=None):
+		'''Return a list of objects in the specified folder_id.
 			limit is passed to the API, so might be used as optimization.
-			objects flag allows to return a list of raw metadata objects
-				(with type, links, description, timestamps) instead of just ids.'''
-		if objects is None: objects = self.return_objects
-		lst = self(join(folder_id, 'files'), dict(limit=limit)).get('data', list())
+			type_filter can be set to type (str) or sequence
+				of object types to return, post-api-call processing.'''
+		lst = self(join(folder_id, 'files'), dict(limit=limit))['data']
 		if type_filter:
 			if isinstance(type_filter, types.StringTypes): type_filter = {type_filter}
 			lst = list(obj for obj in lst if obj['type'] in type_filter)
-		lst = dict(it.imap(op.itemgetter('name', 'id'), lst))\
-			if not objects else dict((obj['name'], obj) for obj in lst)
 		return lst
 
 	def resolve_path( self, path,
-			root_id='me/skydrive', objects=None ):
+			root_id='me/skydrive', objects=False ):
 		'''Return id (or metadata) of an object, specified by chain
 				(iterable or fs-style path string) of "name" attributes of it's ancestors.
 			Requires a lot of calls to resolve each name in path, so use with care.
 			root_id parameter allows to specify path
 				 relative to some folder_id (default: me/skydrive).'''
-		if objects is None: objects = self.return_objects
 		if path:
 			if isinstance(path, types.StringTypes):
 				if not path.startswith('me/skydrive'):
 					path = filter(None, path.split(os.sep))
 				else: root_id, path = path, None
 			if path:
-				for name in path: root_id = self.listdir(root_id)[name]
-		return root_id if not objects else self.get(root_id)
+				for name in path:
+					root_id = dict(it.imap(
+						op.itemgetter('name', 'id'), self.listdir(root_id) ))[name]
+		return root_id if not objects else self.info(root_id)
 
 
-	def get(self, obj_id):
-		return self(join(obj_id, 'content'), dict(download='true'), raw=True)
+	def get(self, obj_id, byte_range=None):
+		'''Download and return an file (object) or a specified byte_range from it.
+			See HTTP Range header (rfc2616) for possible byte_range formats,
+				some examples: "0-499" - byte offsets 0-499 (inclusive), "-500" - final 500 bytes.'''
+		kwz = dict()
+		if byte_range:
+			kwz['headers'] = dict(Range='bytes={}'.format(byte_range))
+		return self(join(obj_id, 'content'), dict(download='true'), raw=True, **kwz)
 
-	def put(self, path, folder_id='me/skydrive', overwrite=None):
-		return self(
-			join(folder_id, 'files'), dict(overwrite=overwrite),
+	def put(self, path, folder_id='me/skydrive', overwrite=True):
+		'''Upload a file (object), possibly overwriting
+				(default behavior) a file with the same "name" attribute, if exists.
+			overwrite option can be set to False to allow two identically-named
+					files or "ChooseNewName" to let SkyDrive derive some similar unique name.
+				Behavior of this option mimics underlying API.'''
+		if overwrite is not None:
+			if overwrite is False: overwrite = 'false'
+			elif overwrite in ('true', True): overwrite = None # don't pass it
+			elif overwrite != 'ChooseNewName':
+				raise ValueError( 'overwrite parameter'
+					' must be True, False or "ChooseNewName".' )
+		return self( join(folder_id, 'files'), dict(overwrite=overwrite),
 			method='post', files=dict(file=(basename(path), open(path))) )
 
-	def mkdir(self, obj_id):
-		raise NotImplementedError()
-		return self(obj_id, method='post')
+	def mkdir(self, name=None, folder_id='me/skydrive', metadata=dict()):
+		'''Create a folder with a specified "name" attribute.
+			folder_id allows to specify a parent folder.
+			metadata mapping may contain additional folder properties to pass to an API.'''
+		metadata = metadata.copy()
+		if name: metadata['name'] = name
+		return self(folder_id, data=metadata, method='post', auth_header=True)
 
 	def delete(self, obj_id):
+		'Delete specified object.'
 		return self(obj_id, method='delete')
 
 
 	def info_update(self, obj_id, data):
+		'''Update metadata with of a specified object.
+			See http://msdn.microsoft.com/en-us/library/live/hh243648.aspx
+				for the list of RW keys for each object type.'''
 		return self(obj_id, method='put', data=data, auth_header=True)
 
 	def link(self, obj_id, link_type='shared_read_link'):
+		'''Return a preauthenticated (useable by anyone) link to a specified object.
+			Object will be considered "shared" by SkyDrive, even if link is never actually used.
+			link_type can be either "embed" (returns html), "shared_read_link" or "shared_edit_link".'''
 		assert link_type in ['embed', 'shared_read_link', 'shared_edit_link']
 		return self(join(obj_id, link_type), method='get')
 
 
 	def copy(self, obj_id, folder_id, move=False):
+		'''Copy specified file (object) to a folder.
+			Note that folders cannot be copied, this is API limitation.'''
 		if folder_id.startswith('me/skydrive'):
 			log.info("Special folder names (like 'me/skydrive') don't"
 				" seem to work with copy/move operations, resolving it to id")
@@ -262,15 +286,21 @@ class SkyDriveAPI(SkyDriveAuth):
 			data=dict(destination=folder_id), auth_header=True )
 
 	def move(self, obj_id, folder_id):
+		'''Move specified file (object) to a folder.
+			Note that folders cannot be moved, this is API limitation.'''
 		return self.copy(obj_id, folder_id, move=True)
 
 
 	def comments(self, obj_id):
+		'Get a list of comments (message + metadata) for an object.'
 		return self(join(obj_id, 'comments'))['data']
 	def comment_add(self, obj_id, message):
+		'Add comment message to a specified object.'
 		return self( join(obj_id, 'comments'), method='post',
 			data=dict(message=message), auth_header=True )
 	def comment_delete(self, comment_id):
+		'''Delete specified comment.
+			comment_id can be acquired by listing comments for an object.'''
 		return self(comment_id, method='delete')
 
 
