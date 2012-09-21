@@ -53,47 +53,44 @@ def main():
 
 	cmds = parser.add_subparsers(title='Supported operations')
 
-	cmd = cmds.add_parser('auth', help='Perform user authentication.')
-	cmd.set_defaults(call='auth')
+	def add_command(name, **kwz):
+		cmd = cmds.add_parser(name, **kwz)
+		cmd.set_defaults(call=name)
+		return cmd
+
+	cmd = add_command('auth', help='Perform user authentication.')
 	cmd.add_argument('url', nargs='?',
 		help='URL with the authorization_code.')
 
-	cmd = cmds.add_parser('quota', help='Print quota information.')
-	cmd.set_defaults(call='quota')
-	cmd = cmds.add_parser('recent', help='List recently changed objects.')
-	cmd.set_defaults(call='recent')
+	add_command('quota', help='Print quota information.')
+	add_command('recent', help='List recently changed objects.')
 
-	cmd = cmds.add_parser('info', help='Display object metadata.')
-	cmd.set_defaults(call='info')
+	cmd = add_command('info', help='Display object metadata.')
 	cmd.add_argument('object',
 		nargs='?', default='me/skydrive',
 		help='Object to get info on (default: %(default)s).')
 
-	cmd = cmds.add_parser('info_set', help='Manipulate object metadata.')
-	cmd.set_defaults(call='info_set')
+	cmd = add_command('info_set', help='Manipulate object metadata.')
 	cmd.add_argument('object',
 		help='Object to manipulate metadata for.')
 	cmd.add_argument('data',
 		help='JSON mapping of values to set'
 			' (example: {"name": "new_file_name.jpg"}).')
 
-	cmd = cmds.add_parser('link', help='Get a link to a file.')
-	cmd.set_defaults(call='link')
+	cmd = add_command('link', help='Get a link to a file.')
 	cmd.add_argument('object', help='Object to get link for.')
 	cmd.add_argument('-t', '--type', default='shared_read_link',
 		help='Type of link to request. Possible values'
 			' (default: %(default)s): shared_read_link, embed, shared_edit_link.')
 
-	cmd = cmds.add_parser('ls', help='List folder contents.')
-	cmd.set_defaults(call='ls')
+	cmd = add_command('ls', help='List folder contents.')
 	cmd.add_argument('-o', '--objects', action='store_true',
 		help='Dump full objects, not just name and id.')
 	cmd.add_argument('folder',
 		nargs='?', default='me/skydrive',
 		help='Folder to list contents of (default: %(default)s).')
 
-	cmd = cmds.add_parser('mkdir', help='Create a folder.')
-	cmd.set_defaults(call='mkdir')
+	cmd = add_command('mkdir', help='Create a folder.')
 	cmd.add_argument('name', help='Name of a folder to create.')
 	cmd.add_argument('folder',
 		nargs='?', default='me/skydrive',
@@ -102,16 +99,14 @@ def main():
 		help='JSON mappings of metadata to set for the created folder.'
 			' Optonal. Example: {"description": "Photos from last trip to Mordor"}')
 
-	cmd = cmds.add_parser('get', help='Download file contents.')
-	cmd.set_defaults(call='get')
+	cmd = add_command('get', help='Download file contents.')
 	cmd.add_argument('file', help='File (object) to read.')
 	cmd.add_argument('-b', '--byte-range',
 		help='Specific range of bytes to read from a file (default: read all).'
 			' Should be specified in rfc2616 Range HTTP header format.'
 			' Examples: 0-499 (start - 499), -500 (end-500 to end).')
 
-	cmd = cmds.add_parser('put', help='Upload a file.')
-	cmd.set_defaults(call='put')
+	cmd = add_command('put', help='Upload a file.')
 	cmd.add_argument('file', help='Path to a local file to upload.')
 	cmd.add_argument('folder',
 		nargs='?', default='me/skydrive',
@@ -119,45 +114,38 @@ def main():
 	cmd.add_argument('-n', '--no-overwrite', action='store_true',
 		help='Do not overwrite existing files with the same "name" attribute (visible name).')
 
-	cmd = cmds.add_parser('cp', help='Copy file to a folder.')
-	cmd.set_defaults(call='cp')
+	cmd = add_command('cp', help='Copy file to a folder.')
 	cmd.add_argument('file', help='File (object) to copy.')
 	cmd.add_argument('folder',
 		nargs='?', default='me/skydrive',
 		help='Folder to copy file to (default: %(default)s).')
 
-	cmd = cmds.add_parser('mv', help='Move file to a folder.')
-	cmd.set_defaults(call='mv')
+	cmd = add_command('mv', help='Move file to a folder.')
 	cmd.add_argument('file', help='File (object) to move.')
 	cmd.add_argument('folder',
 		nargs='?', default='me/skydrive',
 		help='Folder to move file to (default: %(default)s).')
 
-	cmd = cmds.add_parser('rm', help='Remove object (file or folder).')
-	cmd.set_defaults(call='rm')
+	cmd = add_command('rm', help='Remove object (file or folder).')
 	cmd.add_argument('object', nargs='+', help='Object(s) to remove.')
 
-	cmd = cmds.add_parser('comments', help='Show comments for a file, object or folder.')
-	cmd.set_defaults(call='comments')
+	cmd = add_command('comments', help='Show comments for a file, object or folder.')
 	cmd.add_argument('object', help='Object to show comments for.')
 
-	cmd = cmds.add_parser('comment_add', help='Add comment for a file, object or folder.')
-	cmd.set_defaults(call='comment_add')
+	cmd = add_command('comment_add', help='Add comment for a file, object or folder.')
 	cmd.add_argument('object', help='Object to add comment for.')
 	cmd.add_argument('message', help='Comment message to add.')
 
-	cmd = cmds.add_parser('comment_delete', help='Delete comment from a file, object or folder.')
-	cmd.set_defaults(call='comment_delete')
+	cmd = add_command('comment_delete', help='Delete comment from a file, object or folder.')
 	cmd.add_argument('comment_id',
 		help='ID of the comment to remove (use "comments"'
 			' action to get comment ids along with the messages).')
 
-	cmd = cmds.add_parser('tree',
+	cmd = add_command('tree',
 		help='Show contents of skydrive (or folder) as a tree of file/folder names.'
 			' Note that this operation will have to (separately) request a listing'
 				' of every folder under the specified one, so can be quite slow for large'
 				' number of these.')
-	cmd.set_defaults(call='tree')
 	cmd.add_argument('folder',
 		nargs='?', default='me/skydrive',
 		help='Folder to display contents of (default: %(default)s).')
