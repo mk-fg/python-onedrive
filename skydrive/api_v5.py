@@ -5,7 +5,7 @@ from __future__ import unicode_literals, print_function
 import itertools as it, operator as op, functools as ft
 from datetime import datetime, timedelta
 from os.path import join, basename
-import os, sys, math, urllib, urlparse, json, types
+import os, sys, urllib, urlparse, json, types
 import requests
 
 from .conf import ConfigMixin
@@ -50,9 +50,6 @@ def request( url, method='get', data=None, files=None,
 	except requests.RequestException as err:
 		raise raise_for.get(code, ProtocolError)(err.message, code)
 
-def urandom_hex(n):
-	return os.urandom(int(math.ceil(n / 2.0))).encode('hex')[:n]
-
 
 
 class SkyDriveAuth(object):
@@ -77,10 +74,7 @@ class SkyDriveAuth(object):
 	auth_redirect_uri = auth_redirect_uri_mobile
 
 
-	def __init__(self, client_id=None, client_secret=None, urandom_len=16, **config):
-		self.client_id = client_id or urandom_hex(urandom_len)
-		self.client_secret = client_secret or urandom_hex(urandom_len)
-
+	def __init__(self, **config):
 		for k, v in config.viewitems():
 			try: getattr(self, k)
 			except AttributeError:
@@ -294,10 +288,12 @@ class SkyDriveAPI(SkyDriveAuth):
 	def comments(self, obj_id):
 		'Get a list of comments (message + metadata) for an object.'
 		return self(join(obj_id, 'comments'))['data']
+
 	def comment_add(self, obj_id, message):
 		'Add comment message to a specified object.'
 		return self( join(obj_id, 'comments'), method='post',
 			data=dict(message=message), auth_header=True )
+
 	def comment_delete(self, comment_id):
 		'''Delete specified comment.
 			comment_id can be acquired by listing comments for an object.'''
