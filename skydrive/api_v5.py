@@ -84,6 +84,7 @@ class SkyDriveAuth(object):
 
 	def auth_user_get_url(self, scope=None):
 		# Note: default redirect_uri is **special**, app must be marked as "mobile" to use it
+		if not self.client_id: raise AuthenticationError('No client_id specified')
 		return '{}?{}'.format( self.auth_url_user, urllib.urlencode(dict(
 			client_id=self.client_id, scope=' '.join(scope or self.auth_scope),
 			response_type='code', redirect_uri=self.auth_redirect_uri )) )
