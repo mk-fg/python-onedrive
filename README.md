@@ -213,12 +213,12 @@ to overwriting file with same "name" (disableable).
 Aforementioned "default paths" (like "my_documents") don't seem to work reliably
 with copy and move methods, unless resolved to folder_id proper.
 
-There are some handy special SkyDrive-related API URLs for stuff like quota and
-a list of recent changes.
+There's a "Recycle Bin" path in web interface, which I don't recall seeing any
+way to access, which keeps all removed files (for some limited time,
+presumably). Files removed through the API end up there as well.
 
-Errors can be returned for most ops, encoded as JSON in responses and have a
-human-readable "code" (like "resource_quota_exceeded") and descriptive
-"message".
+There are some handy special SkyDrive-related API URLs for stuff like quota,
+list of recent changes and a list of shared-with-me objects.
 
 Files have a lot of metadata attached to them, parsed from their contents (exif
 data for photos, office documents metadata, etc).
@@ -237,6 +237,10 @@ Issue is known and generic workaround is documented as such in openssl project
 changelog.
 Newer "requests" module seem to have workaround for the issue implemented
 (0.14.0 seem to work, 0.10.8 does not).
+
+Errors can be returned for most ops, encoded as JSON in responses and have a
+human-readable "code" (like "resource_quota_exceeded") and descriptive
+"message".
 
 According to [SkyDrive interaction
 guidelines](http://msdn.microsoft.com/en-us/library/live/hh826545#guidelines),

@@ -60,6 +60,8 @@ def main():
 
 	cmd = cmds.add_parser('quota', help='Print quota information.')
 	cmd.set_defaults(call='quota')
+	cmd = cmds.add_parser('recent', help='List recently changed objects.')
+	cmd.set_defaults(call='recent')
 
 	cmd = cmds.add_parser('info', help='Display object metadata.')
 	cmd.set_defaults(call='info')
@@ -192,6 +194,8 @@ def main():
 	elif optz.call == 'quota':
 		df, ds = map(size_units, api.get_quota())
 		res = dict(free='{:.1f}{}'.format(*df), quota='{:.1f}{}'.format(*ds))
+	elif optz.call == 'recent':
+		res = api('me/skydrive/recent_docs')['data']
 
 	elif optz.call == 'ls':
 		res = list(api.listdir(resolve_path(optz.folder)))
@@ -248,6 +252,7 @@ def main():
 
 		root_id = resolve_path(optz.folder)
 		res = {api.info(root_id)['name']: recurse(root_id)}
+
 
 	else: parser.error('Unrecognized command: {}'.format(optz.call))
 
