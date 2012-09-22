@@ -1,6 +1,8 @@
 /*.egg-info
 /build
 /dist
+/doc/.doctrees
+/doc/*.txt
 /README.txt
 *.pyc
 *.pyo

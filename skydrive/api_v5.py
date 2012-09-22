@@ -54,9 +54,9 @@ def request( url, method='get', data=None, files=None,
 
 class SkyDriveAuth(object):
 
-	# Client id/secret should be static on per-application basis.
-	# Can be received from LiveConnect by any registered user at https://manage.dev.live.com/
-	# API ToS can be found here at http://msdn.microsoft.com/en-US/library/live/ff765012
+	#: Client id/secret should be static on per-application basis.
+	#: Can be received from LiveConnect by any registered user at https://manage.dev.live.com/
+	#: API ToS can be found here at http://msdn.microsoft.com/en-US/library/live/ff765012
 	client_id = client_secret = None
 
 	auth_url_user = 'https://login.live.com/oauth20_authorize.srf'
@@ -64,17 +64,19 @@ class SkyDriveAuth(object):
 	auth_scope = 'wl.skydrive', 'wl.skydrive_update', 'wl.offline_access'
 	auth_redirect_uri_mobile = 'https://login.live.com/oauth20_desktop.srf'
 
-	# Set by auth_get_token, not used internally
+	#: Set by auth_get_token, not used internally
 	auth_access_expires = auth_access_data_raw = None
 
-	# At least one of these should be set before data requests.
+	#: At least one of auth_code, auth_refresh_token or
+	#:  auth_access_token should be set before data requests.
 	auth_code = auth_refresh_token = auth_access_token = None
 
-	# This (default) redirect_uri is **special** - app must be marked as "mobile" to use it.
+	#: This (default) redirect_uri is **special** - app must be marked as "mobile" to use it.
 	auth_redirect_uri = auth_redirect_uri_mobile
 
 
 	def __init__(self, **config):
+		'Initialize API wrapper class with specified properties set.'
 		for k, v in config.viewitems():
 			try: getattr(self, k)
 			except AttributeError:
@@ -83,6 +85,7 @@ class SkyDriveAuth(object):
 
 
 	def auth_user_get_url(self, scope=None):
+		'Build authorization URL for User Agent.'
 		# Note: default redirect_uri is **special**, app must be marked as "mobile" to use it
 		if not self.client_id: raise AuthenticationError('No client_id specified')
 		return '{}?{}'.format( self.auth_url_user, urllib.urlencode(dict(
@@ -90,6 +93,7 @@ class SkyDriveAuth(object):
 			response_type='code', redirect_uri=self.auth_redirect_uri )) )
 
 	def auth_user_process_url(self, url):
+		'Process tokens and errors from redirect_uri.'
 		url = urlparse.urlparse(url)
 		url_qs = dict(it.chain.from_iterable(
 			urlparse.parse_qsl(v) for v in [url.query, url.fragment] ))
@@ -100,9 +104,8 @@ class SkyDriveAuth(object):
 		return self.auth_code
 
 
-	def auth_get_token( self, check_scope=True,
-			_check_keys=['client_id', 'client_secret', 'code', 'refresh_token', 'grant_type'] ):
-
+	def auth_get_token(self, check_scope=True):
+		'Refresh or acquire access_token.'
 		post_data = dict( client_id=self.client_id,
 			client_secret=self.client_secret, redirect_uri=self.auth_redirect_uri )
 		if not self.auth_refresh_token:
@@ -115,7 +118,8 @@ class SkyDriveAuth(object):
 			post_data.update(
 				refresh_token=self.auth_refresh_token, grant_type='refresh_token' )
 		post_data_missing_keys = list( k for k in
-			_check_keys if k in post_data and not post_data[k] )
+			['client_id', 'client_secret', 'code', 'refresh_token', 'grant_type']
+			if k in post_data and not post_data[k] )
 		if post_data_missing_keys:
 			raise AuthenticationError( 'Insufficient authentication'
 				' data provided (missing keys: {})'.format(post_data_missing_keys) )
