@@ -106,7 +106,10 @@ See LiveConnect docs or notes section below for more info on how these work.
 Module usage
 ----------------------------------------
 
-See
+[doc/api.md](https://github.com/mk-fg/python-skydrive/blob/master/doc/api.md)
+file contains auto-generated (from code) API docs.
+
+See also
 [skydrive/cli_tool.py](https://github.com/mk-fg/python-skydrive/blob/master/skydrive/cli_tool.py)
 for real-world API usage examples.
 

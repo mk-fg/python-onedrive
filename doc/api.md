@@ -13,7 +13,7 @@
 
     Bases: "skydrive.api\_v5.SkyDriveInteractionError"
 
-* **class skydrive.api\_v5.SkyDriveAuth(**config)**
+* **class skydrive.api\_v5.SkyDriveAuth(\*\*config)**
 
     Bases: "object"
 
@@ -88,7 +88,7 @@
 
         Refresh or acquire access_token.
 
-* **class skydrive.api\_v5.SkyDriveAPI(**config)**
+* **class skydrive.api\_v5.SkyDriveAPI(\*\*config)**
 
     Bases: "skydrive.api\_v5.SkyDriveAuth"
 
@@ -218,11 +218,11 @@
 
         comment_id can be acquired by listing comments for an object.
 
-* **class skydrive.api\_v5.PersistentSkyDriveAPI(**config)**
+* **class skydrive.api\_v5.PersistentSkyDriveAPI(\*\*config)**
 
     Bases: "skydrive.api\_v5.SkyDriveAPI", "skydrive.conf.ConfigMixin"
 
 
-    * auth\_get\_token(*argz, **kwz)
+    * auth\_get\_token(\*argz, \*\*kwz)
 
         Refresh or acquire access_token.
