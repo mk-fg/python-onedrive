@@ -1,18 +1,3 @@
-* **exception skydrive.api\_v5.SkyDriveInteractionError**
-
-    Bases: "exceptions.Exception"
-
-* **exception skydrive.api\_v5.ProtocolError(msg, code=None)**
-
-    Bases: "skydrive.api\_v5.SkyDriveInteractionError"
-
-
-    * \_\_init\_\_(msg, code=None)
-
-* **exception skydrive.api\_v5.AuthenticationError**
-
-    Bases: "skydrive.api\_v5.SkyDriveInteractionError"
-
 * **class skydrive.api\_v5.SkyDriveAuth(\*\*config)**
 
     Bases: "object"
@@ -74,6 +59,11 @@
         as "mobile" to use it.
 
 
+    * \_\_init\_\_(\*\*config)
+
+        Initialize API wrapper class with specified properties set.
+
+
     * auth\_user\_get\_url(scope=None)
 
         Build authorization URL for User Agent.
@@ -93,6 +83,13 @@
     Bases: "skydrive.api\_v5.SkyDriveAuth"
 
     * api\_url\_base = 'https://apis.live.net/v5.0/'
+
+
+    * \_\_call\_\_(url='me/skydrive', query={}, query\_filter=True, auth\_header=False, auto\_refresh\_token=True, \*\*request\_kwz)
+
+        Make an arbitrary call to LiveConnect API.
+
+        Shouldn't be used directly under most circumstances.
 
 
     * get\_quota()
@@ -222,7 +219,17 @@
 
     Bases: "skydrive.api\_v5.SkyDriveAPI", "skydrive.conf.ConfigMixin"
 
+* **exception skydrive.api\_v5.SkyDriveInteractionError**
 
-    * auth\_get\_token(\*argz, \*\*kwz)
+    Bases: "exceptions.Exception"
 
-        Refresh or acquire access_token.
+* **exception skydrive.api\_v5.ProtocolError(msg, code=None)**
+
+    Bases: "skydrive.api\_v5.SkyDriveInteractionError"
+
+
+    * \_\_init\_\_(msg, code=None)
+
+* **exception skydrive.api\_v5.AuthenticationError**
+
+    Bases: "skydrive.api\_v5.SkyDriveInteractionError"

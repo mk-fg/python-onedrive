@@ -55,6 +55,8 @@ def skip_override(app, what, name, obj, skip, options):
 	if what == 'exception':
 		return False if name == '__init__'\
 			and isinstance(obj, types.UnboundMethodType) else True
+	elif what == 'class' and name in ['__init__', '__call__']\
+		and isinstance(obj, types.UnboundMethodType): return False
 	return skip
 
 def setup(app):

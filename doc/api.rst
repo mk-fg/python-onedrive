@@ -1,5 +1,8 @@
 .. automodule:: skydrive.api_v5
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :exclude-members: request
+    :exclude-members: request, SkyDriveAuth, SkyDriveAPI, PersistentSkyDriveAPI
+
+    .. autoclass:: SkyDriveAuth
+    .. autoclass:: SkyDriveAPI
+
+    .. autoclass:: PersistentSkyDriveAPI
+        :exclude-members: auth_get_token
