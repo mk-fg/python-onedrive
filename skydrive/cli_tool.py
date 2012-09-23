@@ -27,7 +27,7 @@ def size_units( size,
 	return size / float(u1), u
 
 def id_match( s,
-		_re_id=re.compile(r'^(file|folder)\.[0-9a-f]+\.[0-9A-F]+!\d+$') ):
+		_re_id=re.compile(r'^(file|folder)\.[0-9a-f]{16}\.[0-9A-F]{16}!\d+|folder\.[0-9a-f]{16}$') ):
 	return s if _re_id.search(s) else None
 
 def main():
