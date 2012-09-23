@@ -12,7 +12,7 @@ except IOError: readme = ''
 setup(
 
 	name = 'python-skydrive',
-	version = '12.09.36',
+	version = '12.09.37',
 	author = 'Mike Kazantsev',
 	author_email = 'mk.fraggod@gmail.com',
 	license = 'WTFPL',

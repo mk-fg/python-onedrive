@@ -29,11 +29,13 @@ class DoesNotExists(SkyDriveInteractionError):
 
 
 
-def request( url, method='get', data=None, files=None,
-		raw=False, headers=dict(), raise_for=dict() ):
+def request( url, method='get', data=None,
+		files=None, raw=False, headers=dict(), raise_for=dict(),
+		session=requests.session() ):
+	if not session: session = requests
 	method = method.lower()
-	kwz, func = dict(), getattr( requests, method,
-		ft.partial(requests.request, method.upper()) )
+	kwz, func = dict(), getattr( session, method,
+		ft.partial(session.request, method.upper()) )
 	if data is not None:
 		if method == 'post': kwz['data'] = data
 		else:
