@@ -32,11 +32,15 @@
 
     * auth\_access\_expires = None
 
-        Set by auth_get_token, not used internally
+        Set by auth_get_token() method, not used internally.
+
+        Might be useful for debugging or extension purposes.
 
     * auth\_access\_data\_raw = None
 
-        Set by auth_get_token, not used internally
+        Set by auth_get_token() method, not used internally.
+
+        Might be useful for debugging or extension purposes.
 
     * auth\_code = None
 
@@ -120,7 +124,7 @@
 
         Return id (or metadata) of an object, specified by chain
         (iterable or fs-style path string) of "name" attributes of it's
-        ancestors.
+        ancestors, or raises DoesNotExists error.
 
         Requires a lot of calls to resolve each name in path, so use
         with care.
@@ -233,3 +237,9 @@
 * **exception skydrive.api\_v5.AuthenticationError**
 
     Bases: "skydrive.api\_v5.SkyDriveInteractionError"
+
+* **exception skydrive.api\_v5.DoesNotExists**
+
+    Bases: "skydrive.api\_v5.SkyDriveInteractionError"
+
+    Only raised from SkyDriveAPI.resolve_path().

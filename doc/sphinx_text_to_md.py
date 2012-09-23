@@ -63,9 +63,7 @@ def main():
 			elif lp[0] == 'Bases:': # class bases
 				out('{}{}'.format(' '*4, lse))
 				st_attrdoc, st_attrdoc_reset = 4, False
-
-			else:
-				raise FormatError('Unhandled: {!r}'.format(line))
+			else: out('{}{}'.format(' '*4, ls)) # class docstring
 
 		else: # description line
 			if ls[0] in '-*': line = '\\' + line.lstrip()

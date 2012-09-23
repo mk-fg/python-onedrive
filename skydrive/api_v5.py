@@ -24,6 +24,9 @@ class ProtocolError(SkyDriveInteractionError):
 
 class AuthenticationError(SkyDriveInteractionError): pass
 
+class DoesNotExists(SkyDriveInteractionError):
+	'Only raised from SkyDriveAPI.resolve_path().'
+
 
 
 def request( url, method='get', data=None, files=None,
@@ -64,7 +67,8 @@ class SkyDriveAuth(object):
 	auth_scope = 'wl.skydrive', 'wl.skydrive_update', 'wl.offline_access'
 	auth_redirect_uri_mobile = 'https://login.live.com/oauth20_desktop.srf'
 
-	#: Set by auth_get_token, not used internally
+	#: Set by auth_get_token() method, not used internally.
+	#: Might be useful for debugging or extension purposes.
 	auth_access_expires = auth_access_data_raw = None
 
 	#: At least one of auth_code, auth_refresh_token or
@@ -206,7 +210,8 @@ class SkyDriveAPI(SkyDriveAuth):
 	def resolve_path( self, path,
 			root_id='me/skydrive', objects=False ):
 		'''Return id (or metadata) of an object, specified by chain
-				(iterable or fs-style path string) of "name" attributes of it's ancestors.
+				(iterable or fs-style path string) of "name" attributes of it's ancestors,
+				or raises DoesNotExists error.
 			Requires a lot of calls to resolve each name in path, so use with care.
 			root_id parameter allows to specify path
 				 relative to some folder_id (default: me/skydrive).'''
@@ -216,9 +221,13 @@ class SkyDriveAPI(SkyDriveAuth):
 					path = filter(None, path.split(os.sep))
 				else: root_id, path = path, None
 			if path:
-				for name in path:
-					root_id = dict(it.imap(
-						op.itemgetter('name', 'id'), self.listdir(root_id) ))[name]
+				try:
+					for name in path:
+						root_id = dict(it.imap(
+							op.itemgetter('name', 'id'), self.listdir(root_id) ))[name]
+				except (KeyError, ProtocolError) as err:
+					if isinstance(err, ProtocolError) and err.code != 404: raise
+					raise DoesNotExists(root_id, name)
 		return root_id if not objects else self.info(root_id)
 
 
