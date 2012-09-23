@@ -12,7 +12,7 @@ except IOError: readme = ''
 setup(
 
 	name = 'python-skydrive',
-	version = '12.09.33',
+	version = '12.09.34',
 	author = 'Mike Kazantsev',
 	author_email = 'mk.fraggod@gmail.com',
 	license = 'WTFPL',
@@ -38,7 +38,7 @@ setup(
 		'Topic :: System :: Filesystems' ],
 
 	install_requires = ['requests >= 0.14.0'],
-	extras_require = {'cli': ['PyYAML']},
+	extras_require = dict(cli=['PyYAML'], conf=['PyYAML']),
 
 	packages = find_packages(),
 	include_package_data = True,
