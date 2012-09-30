@@ -53,7 +53,7 @@ def main():
 				raise FormatError('Unhandled: {!r}'.format(line))
 
 		elif line_indent == 1:
-			if re.search(r'^{}\('.format(py_name), ls): # function
+			if re.search(r'^(\w+ )?{}\('.format(py_name), ls): # function
 				out('\n'*1, end='')
 				out('{}* {}'.format(' '*4, lse))
 				st_attrdoc, st_attrdoc_reset = 8, False

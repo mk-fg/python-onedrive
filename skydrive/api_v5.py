@@ -29,35 +29,40 @@ class DoesNotExists(SkyDriveInteractionError):
 
 
 
-def request( url, method='get', data=None,
-		files=None, raw=False, headers=dict(), raise_for=dict(),
-		session=requests.session() ):
-	if not session: session = requests
-	method = method.lower()
-	kwz, func = dict(), getattr( session, method,
-		ft.partial(session.request, method.upper()) )
-	if data is not None:
-		if method == 'post': kwz['data'] = data
-		else:
-			kwz['data'] = json.dumps(data)
-			headers = headers.copy()
-			headers.setdefault('Content-Type', 'application/json')
-	if files is not None: kwz['files'] = files
-	if headers is not None: kwz['headers'] = headers
-	code = None
-	try:
-		res = func(url, **kwz)
-		# log.debug('Response headers: {}'.format(res.headers))
-		code = res.status_code
-		if code != requests.codes.ok: res.raise_for_status()
-		if code == requests.codes.no_content: return
-		return json.loads(res.text) if not raw else res.content
-	except requests.RequestException as err:
-		raise raise_for.get(code, ProtocolError)(err.message, code)
+class SkyDriveHTTPClient(object):
+
+	@staticmethod
+	def request( url, method='get', data=None,
+			files=None, raw=False, headers=dict(), raise_for=dict(),
+			session=requests.session() ):
+		'''Make synchronous HTTP request.
+			Can be overidden to use different http module (e.g. urllib2, twisted, etc).'''
+		if not session: session = requests
+		method = method.lower()
+		kwz, func = dict(), getattr( session, method,
+			ft.partial(session.request, method.upper()) )
+		if data is not None:
+			if method == 'post': kwz['data'] = data
+			else:
+				kwz['data'] = json.dumps(data)
+				headers = headers.copy()
+				headers.setdefault('Content-Type', 'application/json')
+		if files is not None: kwz['files'] = files
+		if headers is not None: kwz['headers'] = headers
+		code = None
+		try:
+			res = func(url, **kwz)
+			# log.debug('Response headers: {}'.format(res.headers))
+			code = res.status_code
+			if code != requests.codes.ok: res.raise_for_status()
+			if code == requests.codes.no_content: return
+			return json.loads(res.text) if not raw else res.content
+		except requests.RequestException as err:
+			raise raise_for.get(code, ProtocolError)(err.message, code)
 
 
 
-class SkyDriveAuth(object):
+class SkyDriveAuth(SkyDriveHTTPClient):
 
 	#: Client id/secret should be static on per-application basis.
 	#: Can be received from LiveConnect by any registered user at https://manage.dev.live.com/
@@ -112,6 +117,10 @@ class SkyDriveAuth(object):
 
 	def auth_get_token(self, check_scope=True):
 		'Refresh or acquire access_token.'
+		res = self.auth_access_data_raw = self._auth_token_request()
+		return self._auth_token_process(res, check_scope=check_scope)
+
+	def _auth_token_request(self):
 		post_data = dict( client_id=self.client_id,
 			client_secret=self.client_secret, redirect_uri=self.auth_redirect_uri )
 		if not self.auth_refresh_token:
@@ -130,9 +139,9 @@ class SkyDriveAuth(object):
 			raise AuthenticationError( 'Insufficient authentication'
 				' data provided (missing keys: {})'.format(post_data_missing_keys) )
 
-		res = self.auth_access_data_raw =\
-			request(self.auth_url_token, method='post', data=post_data)
+		return self.request(self.auth_url_token, method='post', data=post_data)
 
+	def _auth_token_process(self, res, check_scope=True):
 		assert res['token_type'] == 'bearer'
 		for k in 'access_token', 'refresh_token':
 			if k in res: setattr(self, 'auth_{}'.format(k), res[k])
@@ -148,7 +157,12 @@ class SkyDriveAuth(object):
 
 
 
-class SkyDriveAPI(SkyDriveAuth):
+class SkyDriveAPIWrapper(SkyDriveAuth):
+
+	'''Less-biased SkyDrive API wrapper class.
+		All calls made here return result of self.request() call directly,
+			so it can easily be made async (e.g. return twisted deferred object)
+			by overriding http request method in subclass.'''
 
 	api_url_base = 'https://apis.live.net/v5.0/'
 
@@ -178,59 +192,21 @@ class SkyDriveAPI(SkyDriveAuth):
 		kwz.setdefault('raise_for', dict())[401] = AuthenticationError
 		api_url = ft.partial( self._api_url,
 			url, query, pass_access_token=not auth_header )
-		try: return request(api_url(), **kwz)
+		try: return self.request(api_url(), **kwz)
 		except AuthenticationError:
 			if not auto_refresh_token: raise
 			self.auth_get_token()
 			if auth_header: # update auth header with a new token
 				request_kwz['headers']['Authorization']\
 					= 'Bearer {}'.format(self.auth_access_token)
-			return request(api_url(), **request_kwz)
+			return self.request(api_url(), **request_kwz)
 
-
-	def get_quota(self):
-		'Return tuple of (bytes_available, bytes_quota).'
-		return op.itemgetter('available', 'quota')(self('me/skydrive/quota'))
 
 	def info(self, obj_id='me/skydrive'):
 		'''Return metadata of a specified object.
 			See http://msdn.microsoft.com/en-us/library/live/hh243648.aspx
 				for the list and description of metadata keys for each object type.'''
 		return self(obj_id)
-
-	def listdir(self, folder_id='me/skydrive', type_filter=None, limit=None):
-		'''Return a list of objects in the specified folder_id.
-			limit is passed to the API, so might be used as optimization.
-			type_filter can be set to type (str) or sequence
-				of object types to return, post-api-call processing.'''
-		lst = self(join(folder_id, 'files'), dict(limit=limit))['data']
-		if type_filter:
-			if isinstance(type_filter, types.StringTypes): type_filter = {type_filter}
-			lst = list(obj for obj in lst if obj['type'] in type_filter)
-		return lst
-
-	def resolve_path( self, path,
-			root_id='me/skydrive', objects=False ):
-		'''Return id (or metadata) of an object, specified by chain
-				(iterable or fs-style path string) of "name" attributes of it's ancestors,
-				or raises DoesNotExists error.
-			Requires a lot of calls to resolve each name in path, so use with care.
-			root_id parameter allows to specify path
-				 relative to some folder_id (default: me/skydrive).'''
-		if path:
-			if isinstance(path, types.StringTypes):
-				if not path.startswith('me/skydrive'):
-					path = filter(None, path.split(os.sep))
-				else: root_id, path = path, None
-			if path:
-				try:
-					for name in path:
-						root_id = dict(it.imap(
-							op.itemgetter('name', 'id'), self.listdir(root_id) ))[name]
-				except (KeyError, ProtocolError) as err:
-					if isinstance(err, ProtocolError) and err.code != 404: raise
-					raise DoesNotExists(root_id, name)
-		return root_id if not objects else self.info(root_id)
 
 
 	def get(self, obj_id, byte_range=None):
@@ -285,12 +261,9 @@ class SkyDriveAPI(SkyDriveAuth):
 
 
 	def copy(self, obj_id, folder_id, move=False):
-		'''Copy specified file (object) to a folder.
-			Note that folders cannot be copied, this is API limitation.'''
-		if folder_id.startswith('me/skydrive'):
-			log.info("Special folder names (like 'me/skydrive') don't"
-				" seem to work with copy/move operations, resolving it to id")
-			folder_id = self.info(folder_id)['id']
+		'''Copy specified file (object) to a folder with a given ID.
+			Well-known folder names (like "me/skydrive") don't seem to work here.
+			Folders cannot be copied, this is API limitation.'''
 		return self( obj_id,
 			method='copy' if not move else 'move',
 			data=dict(destination=folder_id), auth_header=True )
@@ -314,6 +287,59 @@ class SkyDriveAPI(SkyDriveAuth):
 		'''Delete specified comment.
 			comment_id can be acquired by listing comments for an object.'''
 		return self(comment_id, method='delete')
+
+
+
+class SkyDriveAPI(SkyDriveAPIWrapper):
+
+	'Biased synchronous SkyDrive API interface.'
+
+	def get_quota(self):
+		'Return tuple of (bytes_available, bytes_quota).'
+		return op.itemgetter('available', 'quota')(self('me/skydrive/quota'))
+
+	def listdir(self, folder_id='me/skydrive', type_filter=None, limit=None):
+		'''Return a list of objects in the specified folder_id.
+			limit is passed to the API, so might be used as optimization.
+			type_filter can be set to type (str) or sequence
+				of object types to return, post-api-call processing.'''
+		lst = self(join(folder_id, 'files'), dict(limit=limit))['data']
+		if type_filter:
+			if isinstance(type_filter, types.StringTypes): type_filter = {type_filter}
+			lst = list(obj for obj in lst if obj['type'] in type_filter)
+		return lst
+
+	def resolve_path( self, path,
+			root_id='me/skydrive', objects=False ):
+		'''Return id (or metadata) of an object, specified by chain
+				(iterable or fs-style path string) of "name" attributes of it's ancestors,
+				or raises DoesNotExists error.
+			Requires a lot of calls to resolve each name in path, so use with care.
+			root_id parameter allows to specify path
+				 relative to some folder_id (default: me/skydrive).'''
+		if path:
+			if isinstance(path, types.StringTypes):
+				if not path.startswith('me/skydrive'):
+					path = filter(None, path.split(os.sep))
+				else: root_id, path = path, None
+			if path:
+				try:
+					for name in path:
+						root_id = dict(it.imap(
+							op.itemgetter('name', 'id'), self.listdir(root_id) ))[name]
+				except (KeyError, ProtocolError) as err:
+					if isinstance(err, ProtocolError) and err.code != 404: raise
+					raise DoesNotExists(root_id, name)
+		return root_id if not objects else self.info(root_id)
+
+	def copy(self, obj_id, folder_id, move=False):
+		'''Copy specified file (object) to a folder.
+			Note that folders cannot be copied, this is API limitation.'''
+		if folder_id.startswith('me/skydrive'):
+			log.info("Special folder names (like 'me/skydrive') don't"
+				" seem to work with copy/move operations, resolving it to id")
+			folder_id = self.info(folder_id)['id']
+		super(SkyDriveAPI, self).copy(obj_id, folder_id, move=move)
 
 
 

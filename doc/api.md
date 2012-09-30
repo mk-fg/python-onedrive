@@ -1,6 +1,18 @@
-* **class skydrive.api\_v5.SkyDriveAuth(\*\*config)**
+* **class skydrive.api\_v5.SkyDriveHTTPClient**
 
     Bases: "object"
+
+
+    * static request(url, method='get', data=None, files=None, raw=False, headers={}, raise\_for={}, session=<requests-client at 0x99a06ac>)
+
+        Make synchronous HTTP request.
+
+        Can be overidden to use different http module (e.g. urllib2,
+        twisted, etc).
+
+* **class skydrive.api\_v5.SkyDriveAuth(\*\*config)**
+
+    Bases: "skydrive.api\_v5.SkyDriveHTTPClient"
 
     * client\_id = None
 
@@ -82,9 +94,15 @@
 
         Refresh or acquire access_token.
 
-* **class skydrive.api\_v5.SkyDriveAPI(\*\*config)**
+* **class skydrive.api\_v5.SkyDriveAPIWrapper(\*\*config)**
 
     Bases: "skydrive.api\_v5.SkyDriveAuth"
+
+    Less-biased SkyDrive API wrapper class.
+
+    All calls made here return result of self.request() call directly,
+    so it can easily be made async (e.g. return twisted deferred
+    object) by overriding http request method in subclass.
 
     * api\_url\_base = 'https://apis.live.net/v5.0/'
 
@@ -96,11 +114,6 @@
         Shouldn't be used directly under most circumstances.
 
 
-    * get\_quota()
-
-        Return tuple of (bytes_available, bytes_quota).
-
-
     * info(obj\_id='me/skydrive')
 
         Return metadata of a specified object.
@@ -108,29 +121,6 @@
         See http://msdn.microsoft.com/en-us/library/live/hh243648.aspx
         for the list and description of metadata keys for each object
         type.
-
-
-    * listdir(folder\_id='me/skydrive', type\_filter=None, limit=None)
-
-        Return a list of objects in the specified folder_id.
-
-        limit is passed to the API, so might be used as optimization.
-
-        type_filter can be set to type (str) or sequence of object types
-        to return, post-api-call processing.
-
-
-    * resolve\_path(path, root\_id='me/skydrive', objects=False)
-
-        Return id (or metadata) of an object, specified by chain
-        (iterable or fs-style path string) of "name" attributes of it's
-        ancestors, or raises DoesNotExists error.
-
-        Requires a lot of calls to resolve each name in path, so use
-        with care.
-
-        root_id parameter allows to specify path relative to some
-        folder_id (default: me/skydrive).
 
 
     * get(obj\_id, byte\_range=None)
@@ -191,9 +181,12 @@
 
     * copy(obj\_id, folder\_id, move=False)
 
-        Copy specified file (object) to a folder.
+        Copy specified file (object) to a folder with a given ID.
 
-        Note that folders cannot be copied, this is API limitation.
+        Well-known folder names (like "me/skydrive") don't seem to work
+        here.
+
+        Folders cannot be copied, this is API limitation.
 
 
     * move(obj\_id, folder\_id)
@@ -218,6 +211,47 @@
         Delete specified comment.
 
         comment_id can be acquired by listing comments for an object.
+
+* **class skydrive.api\_v5.SkyDriveAPI(\*\*config)**
+
+    Bases: "skydrive.api\_v5.SkyDriveAPIWrapper"
+
+    Biased synchronous SkyDrive API interface.
+
+
+    * get\_quota()
+
+        Return tuple of (bytes_available, bytes_quota).
+
+
+    * listdir(folder\_id='me/skydrive', type\_filter=None, limit=None)
+
+        Return a list of objects in the specified folder_id.
+
+        limit is passed to the API, so might be used as optimization.
+
+        type_filter can be set to type (str) or sequence of object types
+        to return, post-api-call processing.
+
+
+    * resolve\_path(path, root\_id='me/skydrive', objects=False)
+
+        Return id (or metadata) of an object, specified by chain
+        (iterable or fs-style path string) of "name" attributes of it's
+        ancestors, or raises DoesNotExists error.
+
+        Requires a lot of calls to resolve each name in path, so use
+        with care.
+
+        root_id parameter allows to specify path relative to some
+        folder_id (default: me/skydrive).
+
+
+    * copy(obj\_id, folder\_id, move=False)
+
+        Copy specified file (object) to a folder.
+
+        Note that folders cannot be copied, this is API limitation.
 
 * **class skydrive.api\_v5.PersistentSkyDriveAPI(\*\*config)**
 
