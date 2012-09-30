@@ -349,11 +349,11 @@ class SkyDriveAPI(SkyDriveAPIWrapper):
 			log.info("Special folder names (like 'me/skydrive') don't"
 				" seem to work with copy/move operations, resolving it to id")
 			folder_id = self.info(folder_id)['id']
-		super(SkyDriveAPI, self).copy(obj_id, folder_id, move=move)
+		return super(SkyDriveAPI, self).copy(obj_id, folder_id, move=move)
 
 	def comments(self, obj_id):
 		'Get a list of comments (message + metadata) for an object.'
-		super(SkyDriveAPI, self).comments(obj_id)['data']
+		return super(SkyDriveAPI, self).comments(obj_id)['data']
 
 
 
