@@ -23,6 +23,7 @@ def main():
 	out = ft.partial(print, file=dst)
 
 	st_attrdoc = 0
+	st_cont, lse_nl = False, None
 
 	for line in src:
 		ls = line.strip()
@@ -38,10 +39,11 @@ def main():
 			line_indent = line_indent / 3
 
 		lp = line.split()
-		lse = ls.replace('_', r'\_').replace('*', r'\*')
+		lse = re.sub(r'([_*<>])', r'\\\1', ls)
 		for url in re.findall(r'\b\w+://\S+', lse):
 			lse = lse.replace(url, url.replace(r'\_', '_'))
 		lse = re.sub(r'\bu([\'"])', r'\1', lse)
+		st_cont, lse_nl = bool(lse_nl), '' if re.search(r'\b\w+://\S+-$', lse) else '\n'
 
 		st_attrdoc_reset = True
 		if not line_indent:
@@ -63,11 +65,11 @@ def main():
 			elif lp[0] == 'Bases:': # class bases
 				out('{}{}'.format(' '*4, lse))
 				st_attrdoc, st_attrdoc_reset = 4, False
-			else: out('{}{}'.format(' '*4, ls)) # class docstring
+			else: out('{}{}'.format(' '*(4 * st_cont), ls), end=lse_nl) # class docstring
 
 		else: # description line
 			if ls[0] in '-*': line = '\\' + line.lstrip()
-			out('{}{}'.format(' '*st_attrdoc, line.lstrip()), end='')
+			out('{}{}'.format(' '*(st_attrdoc * st_cont), line.strip()), end=lse_nl)
 			st_attrdoc_reset = False
 
 		if st_attrdoc and st_attrdoc_reset: st_attrdoc = 0

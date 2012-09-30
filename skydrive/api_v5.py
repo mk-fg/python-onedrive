@@ -66,7 +66,7 @@ class SkyDriveAuth(SkyDriveHTTPClient):
 
 	#: Client id/secret should be static on per-application basis.
 	#: Can be received from LiveConnect by any registered user at https://manage.dev.live.com/
-	#: API ToS can be found here at http://msdn.microsoft.com/en-US/library/live/ff765012
+	#: API ToS can be found at http://msdn.microsoft.com/en-US/library/live/ff765012
 	client_id = client_secret = None
 
 	auth_url_user = 'https://login.live.com/oauth20_authorize.srf'
@@ -202,6 +202,14 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
 			return self.request(api_url(), **request_kwz)
 
 
+	def get_quota(self):
+		'Get SkyDrive object, representing quota.'
+		return self('me/skydrive/quota')
+
+	def listdir(self, folder_id='me/skydrive', limit=None):
+		'Get SkyDrive object, representing list of objects in a folder.'
+		return self(join(folder_id, 'files'), dict(limit=limit))
+
 	def info(self, obj_id='me/skydrive'):
 		'''Return metadata of a specified object.
 			See http://msdn.microsoft.com/en-us/library/live/hh243648.aspx
@@ -275,8 +283,8 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
 
 
 	def comments(self, obj_id):
-		'Get a list of comments (message + metadata) for an object.'
-		return self(join(obj_id, 'comments'))['data']
+		'Get SkyDrive object, representing a list of comments for an object.'
+		return self(join(obj_id, 'comments'))
 
 	def comment_add(self, obj_id, message):
 		'Add comment message to a specified object.'
@@ -292,22 +300,8 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
 
 class SkyDriveAPI(SkyDriveAPIWrapper):
 
-	'Biased synchronous SkyDrive API interface.'
-
-	def get_quota(self):
-		'Return tuple of (bytes_available, bytes_quota).'
-		return op.itemgetter('available', 'quota')(self('me/skydrive/quota'))
-
-	def listdir(self, folder_id='me/skydrive', type_filter=None, limit=None):
-		'''Return a list of objects in the specified folder_id.
-			limit is passed to the API, so might be used as optimization.
-			type_filter can be set to type (str) or sequence
-				of object types to return, post-api-call processing.'''
-		lst = self(join(folder_id, 'files'), dict(limit=limit))['data']
-		if type_filter:
-			if isinstance(type_filter, types.StringTypes): type_filter = {type_filter}
-			lst = list(obj for obj in lst if obj['type'] in type_filter)
-		return lst
+	'''Biased synchronous SkyDrive API interface.
+		Adds some derivative convenience methods over SkyDriveAPIWrapper.'''
 
 	def resolve_path( self, path,
 			root_id='me/skydrive', objects=False ):
@@ -332,6 +326,22 @@ class SkyDriveAPI(SkyDriveAPIWrapper):
 					raise DoesNotExists(root_id, name)
 		return root_id if not objects else self.info(root_id)
 
+	def get_quota(self):
+		'Return tuple of (bytes_available, bytes_quota).'
+		return op.itemgetter('available', 'quota')\
+			(super(SkyDriveAPI, self).get_quota())
+
+	def listdir(self, folder_id='me/skydrive', type_filter=None, limit=None):
+		'''Return a list of objects in the specified folder_id.
+			limit is passed to the API, so might be used as optimization.
+			type_filter can be set to type (str) or sequence
+				of object types to return, post-api-call processing.'''
+		lst = super(SkyDriveAPI, self).listdir(folder_id=folder_id, limit=limit)['data']
+		if type_filter:
+			if isinstance(type_filter, types.StringTypes): type_filter = {type_filter}
+			lst = list(obj for obj in lst if obj['type'] in type_filter)
+		return lst
+
 	def copy(self, obj_id, folder_id, move=False):
 		'''Copy specified file (object) to a folder.
 			Note that folders cannot be copied, this is API limitation.'''
@@ -341,6 +351,9 @@ class SkyDriveAPI(SkyDriveAPIWrapper):
 			folder_id = self.info(folder_id)['id']
 		super(SkyDriveAPI, self).copy(obj_id, folder_id, move=move)
 
+	def comments(self, obj_id):
+		'Get a list of comments (message + metadata) for an object.'
+		super(SkyDriveAPI, self).comments(obj_id)['data']
 
 
 

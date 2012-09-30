@@ -3,7 +3,7 @@
     Bases: "object"
 
 
-    * static request(url, method='get', data=None, files=None, raw=False, headers={}, raise\_for={}, session=<requests-client at 0x99a06ac>)
+    * static request(url, method='get', data=None, files=None, raw=False, headers={}, raise\_for={}, session=\<requests-client at 0x8cde6cc\>)
 
         Make synchronous HTTP request.
 
@@ -21,8 +21,7 @@
         Can be received from LiveConnect by any registered user at
         https://manage.dev.live.com/
 
-        API ToS can be found here at http://msdn.microsoft.com/en-
-        US/library/live/ff765012
+        API ToS can be found at http://msdn.microsoft.com/en-US/library/live/ff765012
 
     * client\_secret = None
 
@@ -31,8 +30,7 @@
         Can be received from LiveConnect by any registered user at
         https://manage.dev.live.com/
 
-        API ToS can be found here at http://msdn.microsoft.com/en-
-        US/library/live/ff765012
+        API ToS can be found at http://msdn.microsoft.com/en-US/library/live/ff765012
 
     * auth\_url\_user = 'https://login.live.com/oauth20_authorize.srf'
 
@@ -112,6 +110,16 @@
         Make an arbitrary call to LiveConnect API.
 
         Shouldn't be used directly under most circumstances.
+
+
+    * get\_quota()
+
+        Get SkyDrive object, representing quota.
+
+
+    * listdir(folder\_id='me/skydrive', limit=None)
+
+        Get SkyDrive object, representing list of objects in a folder.
 
 
     * info(obj\_id='me/skydrive')
@@ -198,7 +206,8 @@
 
     * comments(obj\_id)
 
-        Get a list of comments (message + metadata) for an object.
+        Get SkyDrive object, representing a list of comments for an
+        object.
 
 
     * comment\_add(obj\_id, message)
@@ -218,6 +227,21 @@
 
     Biased synchronous SkyDrive API interface.
 
+    Adds some derivative convenience methods over SkyDriveAPIWrapper.
+
+
+    * resolve\_path(path, root\_id='me/skydrive', objects=False)
+
+        Return id (or metadata) of an object, specified by chain
+        (iterable or fs-style path string) of "name" attributes of it's
+        ancestors, or raises DoesNotExists error.
+
+        Requires a lot of calls to resolve each name in path, so use
+        with care.
+
+        root_id parameter allows to specify path relative to some
+        folder_id (default: me/skydrive).
+
 
     * get\_quota()
 
@@ -234,24 +258,16 @@
         to return, post-api-call processing.
 
 
-    * resolve\_path(path, root\_id='me/skydrive', objects=False)
-
-        Return id (or metadata) of an object, specified by chain
-        (iterable or fs-style path string) of "name" attributes of it's
-        ancestors, or raises DoesNotExists error.
-
-        Requires a lot of calls to resolve each name in path, so use
-        with care.
-
-        root_id parameter allows to specify path relative to some
-        folder_id (default: me/skydrive).
-
-
     * copy(obj\_id, folder\_id, move=False)
 
         Copy specified file (object) to a folder.
 
         Note that folders cannot be copied, this is API limitation.
+
+
+    * comments(obj\_id)
+
+        Get a list of comments (message + metadata) for an object.
 
 * **class skydrive.api\_v5.PersistentSkyDriveAPI(\*\*config)**
 
