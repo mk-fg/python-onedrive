@@ -39,7 +39,8 @@ def main():
 			line_indent = line_indent / 3
 
 		lp = line.split()
-		lse = re.sub(r'([_*<>])', r'\\\1', ls)
+		lse = re.sub(r'(<\S+) at 0x[\da-f]+(>)', r'\1\2', ls)
+		lse = re.sub(r'([_*<>])', r'\\\1', lse)
 		for url in re.findall(r'\b\w+://\S+', lse):
 			lse = lse.replace(url, url.replace(r'\_', '_'))
 		lse = re.sub(r'\bu([\'"])', r'\1', lse)

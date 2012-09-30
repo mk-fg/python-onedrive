@@ -3,7 +3,7 @@
     Bases: "object"
 
 
-    * static request(url, method='get', data=None, files=None, raw=False, headers={}, raise\_for={}, session=\<requests-client at 0x8cde6cc\>)
+    * static request(url, method='get', data=None, files=None, raw=False, headers={}, raise\_for={}, session=\<requests-client\>)
 
         Make synchronous HTTP request.
 
