@@ -122,28 +122,32 @@ It's a regular package for Python 2.7 (not 3.X).
 
 Using [pip](http://pip-installer.org/) is the best way:
 
-	% pip install python-skydrive
+	% pip install 'python-skydrive[standalone]'
 
 If you don't have it, use:
 
 	% easy_install pip
-	% pip install python-skydrive
+	% pip install 'python-skydrive[standalone]'
 
 Alternatively ([see
 also](http://www.pip-installer.org/en/latest/installing.html)):
 
 	% curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
-	% pip install python-skydrive
+	% pip install 'python-skydrive[standalone]'
 
 Or, if you absolutely must:
 
-	% easy_install python-skydrive
+	% easy_install python-skydrive requests
 
 But, you really shouldn't do that.
 
 Current-git version can be installed like this:
 
 	% pip install 'git+https://github.com/mk-fg/python-skydrive.git#egg=python-skydrive'
+
+"standalone" option above enables dependency on "requests" module, which is used
+as default HTTP client lib. If the plan is to extend or override that, flag can
+be dropped.
 
 Note that to install stuff in system-wide PATH and site-packages, elevated
 privileges are often required.
@@ -160,7 +164,8 @@ without any installation, if that's the only thing you need there.
 
 * [Python 2.7 (not 3.X)](http://python.org/)
 
-* [requests](http://docs.python-requests.org/en/latest/)
+* (unless your plan is to override that)
+	[requests](http://docs.python-requests.org/en/latest/)
 
 * (optional, recommended) [PyYAML](http://pyyaml.org) - required for CLI tool
 	and optional persistent-state ("conf") module only.
