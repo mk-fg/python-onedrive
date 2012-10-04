@@ -54,8 +54,8 @@ class SkyDriveHTTPClient(object):
 			res = func(url, **kwz)
 			# log.debug('Response headers: {}'.format(res.headers))
 			code = res.status_code
-			if code != requests.codes.ok: res.raise_for_status()
 			if code == requests.codes.no_content: return
+			if code != requests.codes.ok: res.raise_for_status()
 			return json.loads(res.text) if not raw else res.content
 		except requests.RequestException as err:
 			raise raise_for.get(code, ProtocolError)(err.message, code)
