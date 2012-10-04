@@ -109,6 +109,20 @@ Module usage
 [doc/api.md](https://github.com/mk-fg/python-skydrive/blob/master/doc/api.md)
 file contains auto-generated (from code) API docs.
 
+API code is split between three classes:
+
+* HTTP wrapper - SkyDriveHTTPClient
+* Authentication methods - SkyDriveAuth
+* Unbiased and simple wrappers around HTTP calls - SkyDriveAPIWrapper, each one
+	returning decoded HTTP response (i.e. whatever request method in
+	SkyDriveHTTPClient returns).
+* Biased convenience methods - SkyDriveAPI
+
+Such separation allowed to reuse SkyDriveAPIWrapper class to wrap async
+(returning "Deferred" objects instead of data) in
+[txSkyDrive](https://github.com/mk-fg/txskydrive) just by overriding "request"
+method from SkyDriveHTTPClient.
+
 See also
 [skydrive/cli_tool.py](https://github.com/mk-fg/python-skydrive/blob/master/skydrive/cli_tool.py)
 for real-world API usage examples.
