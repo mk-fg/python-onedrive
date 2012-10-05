@@ -6,7 +6,6 @@ import itertools as it, operator as op, functools as ft
 from datetime import datetime, timedelta
 from os.path import join, basename
 import os, sys, urllib, urlparse, json, types
-import requests
 
 from .conf import ConfigMixin
 
@@ -31,13 +30,18 @@ class DoesNotExists(SkyDriveInteractionError):
 
 class SkyDriveHTTPClient(object):
 
-	@staticmethod
-	def request( url, method='get', data=None,
+	def request( self, url, method='get', data=None,
 			files=None, raw=False, headers=dict(), raise_for=dict(),
-			session=requests.session() ):
+			session=None ):
 		'''Make synchronous HTTP request.
 			Can be overidden to use different http module (e.g. urllib2, twisted, etc).'''
-		if not session: session = requests
+		import requests # import here to avoid dependency on the module
+		if session is None:
+			try: session = self._requests_session
+			except AttributeError:
+				session = self._requests_session = requests.session()
+		elif not session: session = requests
+
 		method = method.lower()
 		kwz, func = dict(), getattr( session, method,
 			ft.partial(session.request, method.upper()) )

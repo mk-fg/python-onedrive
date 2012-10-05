@@ -3,7 +3,7 @@ from __future__ import unicode_literals, print_function
 
 
 import itertools as it, operator as op, functools as ft
-import os, sys, io, yaml, errno, tempfile, fcntl, stat
+import os, sys, io, errno, tempfile, fcntl, stat
 from os.path import dirname, basename
 
 import logging
@@ -27,6 +27,8 @@ class ConfigMixin(object):
 
 	@classmethod
 	def from_conf(cls, path=None):
+		import yaml
+
 		if path is None:
 			path = cls.conf_path_default
 			log.debug('Using default state-file path: {}'.format(path))
@@ -49,6 +51,7 @@ class ConfigMixin(object):
 
 	def sync(self):
 		if not self.conf_save: return
+		import yaml
 
 		retry = False
 		with open(self.conf_save, 'r+') as src:
