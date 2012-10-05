@@ -177,7 +177,8 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
 			query.setdefault('access_token', self.auth_access_token)
 		if not pass_empty_values:
 			for k,v in query.viewitems():
-				if not v: raise ProtocolError('Empty key {!r} for API call (path: {})'.format(k, path))
+				if not v:
+					raise AuthenticationError('Empty key {!r} for API call (path: {})'.format(k, path))
 		return urlparse.urljoin( self.api_url_base,
 			'{}?{}'.format(path, urllib.urlencode(query)) )
 
