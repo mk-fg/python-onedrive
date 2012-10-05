@@ -246,7 +246,7 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
 					' must be True, False or "ChooseNewName".' )
 		name, src = (basename(path_or_tuple), open(path_or_tuple))\
 			if isinstance(path_or_tuple, types.StringTypes)\
-			else (path_or_tuple[0], open(path_or_tuple[1]))
+			else (path_or_tuple[0], path_or_tuple[1])
 		return self( join(folder_id, 'files'),
 			dict(overwrite=overwrite), method='post', files=dict(file=(name, src)) )
 
