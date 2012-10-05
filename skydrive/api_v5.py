@@ -226,9 +226,11 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
 			kwz['headers'] = dict(Range='bytes={}'.format(byte_range))
 		return self(join(obj_id, 'content'), dict(download='true'), raw=True, **kwz)
 
-	def put(self, path, folder_id='me/skydrive', overwrite=True):
+	def put(self, path_or_tuple, folder_id='me/skydrive', overwrite=True):
 		'''Upload a file (object), possibly overwriting
 				(default behavior) a file with the same "name" attribute, if exists.
+			First argument can be either path to a local file or tuple of "(name, file)",
+				where "file" can be either a file-like object or just a string of bytes.
 			overwrite option can be set to False to allow two identically-named
 					files or "ChooseNewName" to let SkyDrive derive some similar unique name.
 				Behavior of this option mimics underlying API.'''
@@ -238,8 +240,11 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
 			elif overwrite != 'ChooseNewName':
 				raise ValueError( 'overwrite parameter'
 					' must be True, False or "ChooseNewName".' )
-		return self( join(folder_id, 'files'), dict(overwrite=overwrite),
-			method='post', files=dict(file=(basename(path), open(path))) )
+		name, src = (basename(path_or_tuple), open(path_or_tuple))\
+			if isinstance(path_or_tuple, types.StringTypes)\
+			else (path_or_tuple[0], open(path_or_tuple[1]))
+		return self( join(folder_id, 'files'),
+			dict(overwrite=overwrite), method='post', files=dict(file=(name, src)) )
 
 	def mkdir(self, name=None, folder_id='me/skydrive', metadata=dict()):
 		'''Create a folder with a specified "name" attribute.

@@ -141,10 +141,14 @@
         \- final 500 bytes.
 
 
-    * put(path, folder\_id='me/skydrive', overwrite=True)
+    * put(path\_or\_tuple, folder\_id='me/skydrive', overwrite=True)
 
         Upload a file (object), possibly overwriting (default behavior)
         a file with the same "name" attribute, if exists.
+
+        First argument can be either path to a local file or tuple of
+        "(name, file)", where "file" can be either a file-like object or
+        just a string of bytes.
 
         overwrite option can be set to False to allow two identically-
         named files or "ChooseNewName" to let SkyDrive derive some
