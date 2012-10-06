@@ -328,12 +328,12 @@ class SkyDriveAPI(SkyDriveAPIWrapper):
 				else: root_id, path = path, None
 			if path:
 				try:
-					for name in path:
+					for i, name in enumerate(path):
 						root_id = dict(it.imap(
 							op.itemgetter('name', 'id'), self.listdir(root_id) ))[name]
 				except (KeyError, ProtocolError) as err:
 					if isinstance(err, ProtocolError) and err.code != 404: raise
-					raise DoesNotExists(root_id, name)
+					raise DoesNotExists(root_id, path[i:])
 		return root_id if not objects else self.info(root_id)
 
 	def get_quota(self):
