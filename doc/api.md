@@ -281,12 +281,12 @@
 
     Bases: "exceptions.Exception"
 
-* **exception skydrive.api\_v5.ProtocolError(msg, code=None)**
+* **exception skydrive.api\_v5.ProtocolError(code, msg)**
 
     Bases: "skydrive.api\_v5.SkyDriveInteractionError"
 
 
-    * \_\_init\_\_(msg, code=None)
+    * \_\_init\_\_(code, msg)
 
 * **exception skydrive.api\_v5.AuthenticationError**
 

@@ -17,8 +17,8 @@ log = logging.getLogger(__name__)
 class SkyDriveInteractionError(Exception): pass
 
 class ProtocolError(SkyDriveInteractionError):
-	def __init__(self, msg, code=None):
-		super(ProtocolError, self).__init__(msg)
+	def __init__(self, code, msg):
+		super(ProtocolError, self).__init__(code, msg)
 		self.code = code
 
 class AuthenticationError(SkyDriveInteractionError): pass
@@ -62,7 +62,7 @@ class SkyDriveHTTPClient(object):
 			if code != requests.codes.ok: res.raise_for_status()
 			return json.loads(res.text) if not raw else res.content
 		except requests.RequestException as err:
-			raise raise_for.get(code, ProtocolError)(err.message, code)
+			raise raise_for.get(code, ProtocolError)(code, err.message)
 
 
 
