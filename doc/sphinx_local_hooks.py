@@ -1,8 +1,9 @@
 #-*- coding: utf-8 -*-
+from __future__ import print_function
 
 import itertools as it, operator as op, functools as ft
 from collections import Iterable
-import types
+import os, sys, types, re
 
 
 from sphinx.ext.autodoc import Documenter
@@ -15,7 +16,7 @@ def autodoc_add_line(self, line, *argz, **kwz):
 	if tee:
 		tee_line = self.indent + line
 		if isinstance(tee, file): tee.write(tee_line + '\n')
-		elif tee is True: print tee_line
+		elif tee is True: print(tee_line)
 		else:
 			raise ValueError( 'Unrecognized'
 				' value for "autodoc_dump_rst" option: {!r}'.format(tee) )
@@ -52,11 +53,20 @@ def process_docstring(app, what, name, obj, options, lines):
 
 
 def skip_override(app, what, name, obj, skip, options):
+	if options.get('exclude-members'):
+		include_only = set( re.compile(k[3:])
+			for k in options['exclude-members'] if k.startswith('rx:') )
+		if include_only:
+			for pat in include_only:
+				if pat.search(name): break
+			else: return True
 	if what == 'exception':
 		return False if name == '__init__'\
 			and isinstance(obj, types.UnboundMethodType) else True
-	elif what == 'class' and name in ['__init__', '__call__']\
-		and isinstance(obj, types.UnboundMethodType): return False
+	elif what == 'class':
+		if name in ['__init__', '__call__']\
+			and isinstance(obj, types.UnboundMethodType): return False
+		elif getattr(obj, 'im_class', None) is type: return False
 	return skip
 
 def setup(app):

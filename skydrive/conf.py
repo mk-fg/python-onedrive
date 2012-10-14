@@ -12,11 +12,15 @@ log = logging.getLogger(__name__)
 
 class ConfigMixin(object):
 
+	#: Path to configuration file to use in from_conf() by default.
 	conf_path_default = b'~/.lcrc'
-	conf_save = False # if set to some path, state will be written back to it
 
-	# Only keys listed here will be checked and (possibly) added
-	conf_keys = dict(
+	#: If set to some path, updates will be written back to it.
+	conf_save = False
+
+	#: Hierarchical list of keys to write back
+	#:  to configuration file (preserving the rest) on updates.
+	conf_update_keys = dict(
 		client={'id', 'secret'},
 		auth={'code', 'refresh_token', 'access_expires', 'access_token'} )
 
@@ -26,7 +30,9 @@ class ConfigMixin(object):
 
 
 	@classmethod
-	def from_conf(cls, path=None):
+	def from_conf(cls, path=None, **overrides):
+		'''Initialize instance from YAML configuration file,
+			writing updates (only to keys, specified by "conf_update_keys") back to it.'''
 		import yaml
 
 		if path is None:
@@ -39,10 +45,11 @@ class ConfigMixin(object):
 		conf.setdefault('conf_save', path)
 
 		conf_cls = dict()
-		for ns, keys in cls.conf_keys.viewitems():
+		for ns, keys in cls.conf_update_keys.viewitems():
 			for k in keys:
 				if conf.get(ns, dict()).get(k) is not None:
 					conf_cls['{}_{}'.format(ns, k)] = conf[ns][k]
+		conf_cls.update(overrides)
 
 		self = cls(**conf_cls)
 		self.conf_save = conf['conf_save']
@@ -60,7 +67,7 @@ class ConfigMixin(object):
 			conf = yaml.load(io.BytesIO(conf_raw)) if conf_raw else dict()
 
 			conf_updated = False
-			for ns, keys in self.conf_keys.viewitems():
+			for ns, keys in self.conf_update_keys.viewitems():
 				for k in keys:
 					v = getattr(self, '{}_{}'.format(ns, k), None)
 					if isinstance(v, unicode): v = v.encode('utf-8')

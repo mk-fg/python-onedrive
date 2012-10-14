@@ -1,3 +1,4 @@
+
 * **class skydrive.api\_v5.SkyDriveHTTPClient**
 
     Bases: "object"
@@ -9,6 +10,7 @@
 
         Can be overidden to use different http module (e.g. urllib2,
         twisted, etc).
+
 
 * **class skydrive.api\_v5.SkyDriveAuth(\*\*config)**
 
@@ -91,6 +93,7 @@
     * auth\_get\_token(check\_scope=True)
 
         Refresh or acquire access_token.
+
 
 * **class skydrive.api\_v5.SkyDriveAPIWrapper(\*\*config)**
 
@@ -225,6 +228,7 @@
 
         comment_id can be acquired by listing comments for an object.
 
+
 * **class skydrive.api\_v5.SkyDriveAPI(\*\*config)**
 
     Bases: "skydrive.api\_v5.SkyDriveAPIWrapper"
@@ -273,13 +277,27 @@
 
         Get a list of comments (message + metadata) for an object.
 
+
 * **class skydrive.api\_v5.PersistentSkyDriveAPI(\*\*config)**
 
     Bases: "skydrive.api\_v5.SkyDriveAPI", "skydrive.conf.ConfigMixin"
 
+    * conf\_path\_default = '~/.lcrc'
+
+    * conf\_update\_keys = {'client': set(['secret', 'id']), 'auth': set(['access\_token', 'code', 'access\_expires', 'refresh\_token'])}
+
+
+    * classmethod from\_conf(path=None, \*\*overrides)
+
+        Initialize instance from YAML configuration file, writing
+        updates (only to keys, specified by "conf_update_keys") back to
+        it.
+
+
 * **exception skydrive.api\_v5.SkyDriveInteractionError**
 
     Bases: "exceptions.Exception"
+
 
 * **exception skydrive.api\_v5.ProtocolError(code, msg)**
 
@@ -288,9 +306,11 @@
 
     * \_\_init\_\_(code, msg)
 
+
 * **exception skydrive.api\_v5.AuthenticationError**
 
     Bases: "skydrive.api\_v5.SkyDriveInteractionError"
+
 
 * **exception skydrive.api\_v5.DoesNotExists**
 

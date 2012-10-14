@@ -50,6 +50,7 @@ def main():
 		if not line_indent:
 			if len(lp) > 2 and lp[0] == lp[1]:
 				if lp[0] in ('exception', 'class'): # class, exception
+					out('\n'*1, end='')
 					out('* **{}**'.format(' '.join(lse.split()[1:])))
 
 			else:

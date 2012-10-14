@@ -8,4 +8,5 @@
     .. autoclass:: SkyDriveAPI
 
     .. autoclass:: PersistentSkyDriveAPI
-        :exclude-members: auth_get_token
+        :exclude-members: rx:^from_conf|conf_(path_default|update_keys)$
+        :inherited-members:
