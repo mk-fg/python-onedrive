@@ -30,9 +30,9 @@ followed by revert in 0.14.1), but there are open (at the moment) pull requests
 to allow workarounds.
 
 This module tries to add workarounds for known-bad versions of requests, but if
-you experience errors similar to Issue #1 (with newer versions of modules, for
-example), please reopen the #1 or otherwise report the problem, patches are
-always welcome as well.
+you experience errors similar to [Issue #1](https://github.com/mk-fg/python-skydrive/issues/1)
+(with newer versions of modules, for example), please reopen the issue or
+otherwise report the problem, patches are always welcome as well.
 
 
 
