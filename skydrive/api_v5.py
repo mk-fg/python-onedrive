@@ -30,12 +30,36 @@ class DoesNotExists(SkyDriveInteractionError):
 
 class SkyDriveHTTPClient(object):
 
+	# Dirty workaround for TLSv1.2 issue with Microsoft livefilestore.com hosts.
+	# See README and following related links for details:
+	#  https://github.com/mk-fg/python-skydrive/issues/1
+	#  https://github.com/kennethreitz/requests/pull/799
+	#  https://github.com/kennethreitz/requests/pull/900
+	#  https://github.com/shazow/urllib3/pull/109
+	def _monkey_patch_known_bad_requests(self, requests):
+		if requests.__version__ == '0.14.1':
+			from requests.packages.urllib3 import connectionpool as cp
+			socket, ssl, match_hostname = cp.socket, cp.ssl, cp.match_hostname
+			class VerifiedHTTPSConnection(cp.VerifiedHTTPSConnection):
+				def connect(self):
+					sock = socket.create_connection((self.host, self.port), self.timeout)
+					self.sock = ssl.wrap_socket( sock, self.key_file,
+						self.cert_file, cert_reqs=self.cert_reqs, ca_certs=self.ca_certs,
+						ssl_version=ssl.PROTOCOL_TLSv1 )
+					if self.ca_certs: match_hostname(self.sock.getpeercert(), self.host)
+			cp.VerifiedHTTPSConnection = VerifiedHTTPSConnection
+		requests._monkey_patched = True
+
 	def request( self, url, method='get', data=None,
 			files=None, raw=False, headers=dict(), raise_for=dict(),
 			session=None ):
 		'''Make synchronous HTTP request.
 			Can be overidden to use different http module (e.g. urllib2, twisted, etc).'''
 		import requests # import here to avoid dependency on the module
+		if not getattr(requests, '_mokey_patched', False):
+			# temporary fix for https://github.com/mk-fg/python-skydrive/issues/1
+			self._monkey_patch_known_bad_requests(requests)
+
 		if session is None:
 			try: session = self._requests_session
 			except AttributeError:

@@ -12,6 +12,29 @@ Module also comes with command-line tool to conveniently browse and manipulate
 SkyDrive contents from interactive shell or scripts.
 
 
+### WARNING - Known Issue
+
+As also noted below, TLS implementation on Microsoft
+public.bay.livefilestore.com seem to be broken, choking if client advertise TLS
+1.2 in "Client Hello" packet and works if client only advertises TLS 1.0
+support.
+
+Underlying HTTP protocol implementation module - requests
+(and specifically [urllib3](https://github.com/shazow/urllib3),
+bundled with latest versions of it) currently are not designed and are unable to
+work around the issue (except requests-0.14.0, where simple fix was
+[merged by accident](https://github.com/kennethreitz/requests/pull/799),
+followed by revert in 0.14.1), but there are open (at the moment) pull requests
+([for requests](https://github.com/kennethreitz/requests/pull/900),
+[for urllib3](https://github.com/shazow/urllib3/pull/109))
+to allow workarounds.
+
+This module tries to add workarounds for known-bad versions of requests, but if
+you experience errors similar to Issue #1 (with newer versions of modules, for
+example), please reopen the #1 or otherwise report the problem, patches are
+always welcome as well.
+
+
 
 Command-line usage
 ----------------------------------------
