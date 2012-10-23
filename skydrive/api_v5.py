@@ -56,7 +56,7 @@ class SkyDriveHTTPClient(object):
 		'''Make synchronous HTTP request.
 			Can be overidden to use different http module (e.g. urllib2, twisted, etc).'''
 		import requests # import here to avoid dependency on the module
-		if not getattr(requests, '_mokey_patched', False):
+		if not getattr(requests, '_monkey_patched', False):
 			# temporary fix for https://github.com/mk-fg/python-skydrive/issues/1
 			self._monkey_patch_known_bad_requests(requests)
 
