@@ -203,6 +203,7 @@ without any installation, if that's the only thing you need there.
 
 * (unless your plan is to override that)
 	[requests](http://docs.python-requests.org/en/latest/)
+	(use the latest version, there might be issues with old ones)
 
 * (optional, recommended) [PyYAML](http://pyyaml.org) - required for CLI tool
 	and optional persistent-state ("conf") module only.
