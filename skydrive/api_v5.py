@@ -37,7 +37,7 @@ class SkyDriveHTTPClient(object):
 	#  https://github.com/kennethreitz/requests/pull/900
 	#  https://github.com/shazow/urllib3/pull/109
 	def _monkey_patch_known_bad_requests(self, requests):
-		if requests.__version__ == '0.14.1':
+		if requests.__version__ in ['0.14.1', '0.14.2']:
 			from requests.packages.urllib3 import connectionpool as cp
 			socket, ssl, match_hostname = cp.socket, cp.ssl, cp.match_hostname
 			class VerifiedHTTPSConnection(cp.VerifiedHTTPSConnection):
