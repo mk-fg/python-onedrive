@@ -18,6 +18,10 @@ class ConfigMixin(object):
 	#: If set to some path, updates will be written back to it.
 	conf_save = False
 
+	#: Raise human-readable errors on structure issues,
+	#:  which assume that there is an user-accessible configuration file
+	conf_raise_structure_errors = False
+
 	#: Hierarchical list of keys to write back
 	#:  to configuration file (preserving the rest) on updates.
 	conf_update_keys = dict(
@@ -47,7 +51,13 @@ class ConfigMixin(object):
 		conf_cls = dict()
 		for ns, keys in cls.conf_update_keys.viewitems():
 			for k in keys:
-				if conf.get(ns, dict()).get(k) is not None:
+				try: v = conf.get(ns, dict()).get(k)
+				except AttributeError:
+					if not cls.conf_raise_structure_errors: raise
+					raise KeyError( 'Unable to get value for configuration parameter'
+						' "{k}" in section "{ns}", check configuration file (path: {path}) syntax'
+						' near the aforementioned section/value.'.format(ns=ns, k=k, path=path) )
+				if v is not None:
 					conf_cls['{}_{}'.format(ns, k)] = conf[ns][k]
 		conf_cls.update(overrides)
 

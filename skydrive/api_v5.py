@@ -393,6 +393,8 @@ class SkyDriveAPI(SkyDriveAPIWrapper):
 
 class PersistentSkyDriveAPI(SkyDriveAPI, ConfigMixin):
 
+	conf_raise_structure_errors = True
+
 	@ft.wraps(SkyDriveAPI.auth_get_token)
 	def auth_get_token(self, *argz, **kwz):
 		# Wrapped to push new tokens to storage asap.
