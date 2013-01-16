@@ -174,7 +174,7 @@ also](http://www.pip-installer.org/en/latest/installing.html)):
 
 Or, if you absolutely must:
 
-	% easy_install python-skydrive requests
+	% easy_install python-skydrive 'requests < 1.0.0'
 
 But, you really shouldn't do that.
 
@@ -203,7 +203,8 @@ without any installation, if that's the only thing you need there.
 
 * (unless your plan is to override that)
 	[requests](http://docs.python-requests.org/en/latest/)
-	(use the latest version, there might be issues with old ones)
+	(use pre-1.0.0 version, e.g. 0.14.1, currently module won't work with
+	requests-1.0.0 and higher)
 
 * (optional, recommended) [PyYAML](http://pyyaml.org) - required for CLI tool
 	and optional persistent-state ("conf") module only.
