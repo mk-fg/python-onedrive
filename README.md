@@ -207,8 +207,8 @@ For more details see these links:
 * [requests #1083](https://github.com/kennethreitz/requests/issues/1083)
 * [urllib3 #109](https://github.com/shazow/urllib3/pull/109)
 
-Some proprietary formats, like "OneNote notebook" just can't be accessed ([see
-#2](https://github.com/mk-fg/python-skydrive/issues/2)).
+Some proprietary formats, like "OneNote notebook" just can't be accessed
+([see #2](https://github.com/mk-fg/python-skydrive/issues/2)).
 SkyDrive doesn't allow GET requests for these things and they're also special
 exceptions to [other API
 methods](http://msdn.microsoft.com/en-us/library/live/hh243648.aspx#file), no
