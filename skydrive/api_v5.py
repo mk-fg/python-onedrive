@@ -30,14 +30,18 @@ class DoesNotExists(SkyDriveInteractionError):
 
 class SkyDriveHTTPClient(object):
 
-	# Dirty workaround for TLSv1.2 issue with Microsoft livefilestore.com hosts.
-	# See README and following related links for details:
-	#  https://github.com/mk-fg/python-skydrive/issues/1
-	#  https://github.com/kennethreitz/requests/pull/799
-	#  https://github.com/kennethreitz/requests/pull/900
-	#  https://github.com/shazow/urllib3/pull/109
-	def _monkey_patch_known_bad_requests(self, requests):
+	def _requests_tls_workarounds(self, requests):
+		# Workaround for TLSv1.2 issue with Microsoft livefilestore.com hosts.
+		session = None
+
 		if requests.__version__ in ['0.14.1', '0.14.2']:
+			# These versions can only be monkey-patched, unfortunately.
+			# See README and following related links for details:
+			#  https://github.com/mk-fg/python-skydrive/issues/1
+			#  https://github.com/kennethreitz/requests/pull/799
+			#  https://github.com/kennethreitz/requests/pull/900
+			#  https://github.com/kennethreitz/requests/issues/1083
+			#  https://github.com/shazow/urllib3/pull/109
 			from requests.packages.urllib3 import connectionpool as cp
 			socket, ssl, match_hostname = cp.socket, cp.ssl, cp.match_hostname
 			class VerifiedHTTPSConnection(cp.VerifiedHTTPSConnection):
@@ -48,7 +52,24 @@ class SkyDriveHTTPClient(object):
 						ssl_version=ssl.PROTOCOL_TLSv1 )
 					if self.ca_certs: match_hostname(self.sock.getpeercert(), self.host)
 			cp.VerifiedHTTPSConnection = VerifiedHTTPSConnection
-		requests._monkey_patched = True
+
+		else:
+			version = tuple(it.imap(int, requests.__version__.split('.')))
+			if version > (1, 0, 0):
+				# No hacks necessary - session HTTPAdapter can be used!
+				from requests.packages.urllib3.poolmanager import PoolManager
+				from requests.adapters import HTTPAdapter
+				import ssl
+				class TLSv1Adapter(HTTPAdapter):
+					def init_poolmanager(self, connections, maxsize):
+						self.poolmanager = PoolManager(
+							num_pools=connections, maxsize=maxsize,
+							ssl_version=ssl.PROTOCOL_TLSv1 )
+				session = requests.Session()
+				session.mount('https://', TLSv1Adapter())
+
+		requests._skydrive_tls_fixed = True
+		return session
 
 	def request( self, url, method='get', data=None,
 			files=None, raw=False, headers=dict(), raise_for=dict(),
@@ -56,9 +77,11 @@ class SkyDriveHTTPClient(object):
 		'''Make synchronous HTTP request.
 			Can be overidden to use different http module (e.g. urllib2, twisted, etc).'''
 		import requests # import here to avoid dependency on the module
-		if not getattr(requests, '_monkey_patched', False):
+		if not getattr(requests, '_skydrive_tls_fixed', False):
 			# temporary fix for https://github.com/mk-fg/python-skydrive/issues/1
-			self._monkey_patch_known_bad_requests(requests)
+			patched_session = self._requests_tls_workarounds(requests)
+			if patched_session is not None:
+				self._requests_session = patched_session
 
 		if session is None:
 			try: session = self._requests_session

@@ -12,30 +12,6 @@ Module also comes with command-line tool to conveniently browse and manipulate
 SkyDrive contents from interactive shell or scripts.
 
 
-### WARNING - Known Issue
-
-As also noted below, TLS implementation on Microsoft
-public.bay.livefilestore.com seem to be broken, choking if client advertise TLS
-1.2 in "Client Hello" packet and works if client only advertises TLS 1.0
-support.
-
-Underlying HTTP protocol implementation module - requests
-(and specifically [urllib3](https://github.com/shazow/urllib3),
-bundled with latest versions of it) currently are not designed and are unable to
-work around the issue (except requests-0.14.0, where simple fix was
-[merged by accident](https://github.com/kennethreitz/requests/pull/799),
-followed by revert in 0.14.1), but there are open (at the moment) pull requests
-([for requests](https://github.com/kennethreitz/requests/pull/900),
-[for urllib3](https://github.com/shazow/urllib3/pull/109))
-to allow workarounds.
-
-This module tries to add workarounds for known-bad versions of requests, but if
-you experience errors similar to [Issue #1](https://github.com/mk-fg/python-skydrive/issues/1)
-(with newer versions of modules, for example), please reopen the issue or
-otherwise report the problem, patches are always welcome as well.
-
-
-
 Command-line usage
 ----------------------------------------
 
@@ -174,7 +150,7 @@ also](http://www.pip-installer.org/en/latest/installing.html)):
 
 Or, if you absolutely must:
 
-	% easy_install python-skydrive 'requests < 1.0.0'
+	% easy_install python-skydrive requests
 
 But, you really shouldn't do that.
 
@@ -203,11 +179,40 @@ without any installation, if that's the only thing you need there.
 
 * (unless your plan is to override that)
 	[requests](http://docs.python-requests.org/en/latest/)
-	(use pre-1.0.0 version, e.g. 0.14.1, currently module won't work with
-	requests-1.0.0 and higher)
+	(I strongly recommend using version 0.14.0 or higher - ideally 1.0.0+, see
+	"Known Issues" section below for rationale)
 
 * (optional, recommended) [PyYAML](http://pyyaml.org) - required for CLI tool
 	and optional persistent-state ("conf") module only.
+
+
+### Known Issues
+
+As also noted below, TLS implementation on Microsoft
+public.bay.livefilestore.com seem to be broken, choking if client advertise TLS
+1.2 in "Client Hello" packet and works if client only advertises TLS 1.0
+support.
+
+Underlying HTTP protocol implementation module - requests - of versions earlier
+than 0.14.0 might have an issue with that (later version can either work around
+it or patched in this module).
+
+So be sure to use requests 0.14.0 or higher - ideally, 1.0.0 or later versions,
+where no dirty workarounds are necessary.
+
+For more details see these links:
+
+* [requests #799](https://github.com/kennethreitz/requests/pull/799)
+* [requests #900](https://github.com/kennethreitz/requests/pull/900)
+* [requests #1083](https://github.com/kennethreitz/requests/issues/1083)
+* [urllib3 #109](https://github.com/shazow/urllib3/pull/109)
+
+Some proprietary formats, like "OneNote notebook" just can't be accessed ([see
+#2](https://github.com/mk-fg/python-skydrive/issues/2)).
+SkyDrive doesn't allow GET requests for these things and they're also special
+exceptions to [other API
+methods](http://msdn.microsoft.com/en-us/library/live/hh243648.aspx#file), no
+idea what can be done there.
 
 
 
