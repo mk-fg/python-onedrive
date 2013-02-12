@@ -9,7 +9,6 @@ os.chdir(doc_root)
 sys.path.insert(0, abspath('..')) # for module itself
 sys.path.append(abspath('.')) # for extenstions
 
-
 needs_sphinx = '1.1'
 extensions = ['sphinx.ext.autodoc', 'sphinx_local_hooks']
 
