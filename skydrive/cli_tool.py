@@ -14,6 +14,8 @@ except ImportError:
         and exists(join(dirname(__file__), 'setup.py')):
         sys.path.insert(0, dirname(__file__))
         from skydrive import api_v5, conf
+    else:
+        import api_v5, conf
 
 
 def print_result(data, file=sys.stdout):
@@ -22,7 +24,7 @@ def print_result(data, file=sys.stdout):
 
 def size_units( size,
                 _units=list(reversed(list((u, 2 ** (i * 10))
-                for i, u in enumerate('BKMGT')))) ):
+                    for i, u in enumerate('BKMGT')))) ):
     for u, u1 in _units:
         if size > u1: break
     return size / float(u1), u
