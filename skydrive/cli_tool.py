@@ -22,7 +22,7 @@ def print_result(data, file=sys.stdout):
     yaml.safe_dump(data, file, default_flow_style=False)
 
 
-def size_units( size,
+def size_units(size,
                 _units=list(reversed(list((u, 2 ** (i * 10))
                     for i, u in enumerate('BKMGT')))) ):
     for u, u1 in _units:
