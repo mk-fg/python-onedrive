@@ -44,11 +44,11 @@ class ConfigMixin(object):
             path = cls.conf_path_default
             log.debug('Using default state-file path: {}'.format(path))
         path = os.path.expanduser(path)
-        with open(path) as src:
+        with open(path, 'r') as src:
             portalocker.lock(src, portalocker.LOCK_SH)
             # fcntl.lockf(src, fcntl.LOCK_SH)
             conf = yaml.load(src.read())
-            # portalocker.unlock(src)
+            portalocker.unlock(src)
         conf.setdefault('conf_save', path)
 
         conf_cls = dict()
@@ -79,7 +79,7 @@ class ConfigMixin(object):
             # fcntl.lockf(src, fcntl.LOCK_SH)
             conf_raw = src.read()
             conf = yaml.load(io.BytesIO(conf_raw)) if conf_raw else dict()
-            # portalocker.unlock(src)
+            portalocker.unlock(src)
 
             conf_updated = False
             for ns, keys in self.conf_update_keys.viewitems():
@@ -95,6 +95,7 @@ class ConfigMixin(object):
 
             if conf_updated:
                 log.debug('Updating configuration file ({})'.format(src.name))
+                print(self.conf_save)
                 with tempfile.NamedTemporaryFile(
                         prefix='{}.'.format(basename(self.conf_save)),
                         dir=dirname(self.conf_save), delete=False) as tmp:
@@ -107,35 +108,34 @@ class ConfigMixin(object):
                             os.fchmod(tmp.fileno(),
                                       stat.S_IMODE(os.fstat(src.fileno()).st_mode))
                         except AttributeError:
-                            print('pass')
                             pass
-                        print(1)
                         portalocker.lock(src, portalocker.LOCK_EX)
-                        print(2)
                         # fcntl.lockf(src, fcntl.LOCK_EX)
                         src.seek(0)
-                        print(3)
                         if src.read() != conf_raw:
                             retry = True
                         else:
                             # Atomic update
-                            os.rename(tmp.name, src.name)
-
+                            try:
+                                os.rename(tmp.name, src.name)
+                            except WindowsError:
                             # Non-atomic update for pids that already have fd to old file,
                             #  but (presumably) are waiting for the write-lock to be released
-                            src.seek(0), tmp.seek(0)
-                            src.truncate()
-                            src.write(tmp.read())
-                            src.flush()
-                        print(4)
+                                src.seek(0), tmp.seek(0)
+                                src.truncate()
+                                src.write(tmp.read())
+                                src.flush()
                     finally:
-                        # portalocker.unlock(tmp)
-                        # portalocker.unlock(src)
+                        portalocker.unlock(tmp)
+                        portalocker.unlock(src)
                         try:
                             os.unlink(tmp.name)
                         except OSError:
                             pass
-
+                try:
+                    os.remove(tmp.name)
+                except Exception:
+                    pass
         if retry:
             log.debug(( 'Configuration file ({}) was changed'
                         ' during merge, restarting merge' ).format(self.conf_save))
