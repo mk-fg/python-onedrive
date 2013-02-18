@@ -2,8 +2,10 @@
 from __future__ import unicode_literals, print_function
 
 import itertools as it, operator as op, functools as ft
-import os, sys, io, errno, tempfile, fcntl, stat
+import os, sys, io, errno, tempfile, stat
+# import fcntl
 from os.path import dirname, basename
+import portalocker
 
 import logging
 
@@ -43,8 +45,10 @@ class ConfigMixin(object):
             log.debug('Using default state-file path: {}'.format(path))
         path = os.path.expanduser(path)
         with open(path) as src:
-            fcntl.lockf(src, fcntl.LOCK_SH)
+            portalocker.lock(src, portalocker.LOCK_SH)
+            # fcntl.lockf(src, fcntl.LOCK_SH)
             conf = yaml.load(src.read())
+            # portalocker.unlock(src)
         conf.setdefault('conf_save', path)
 
         conf_cls = dict()
@@ -65,16 +69,17 @@ class ConfigMixin(object):
         self.conf_save = conf['conf_save']
         return self
 
-
     def sync(self):
         if not self.conf_save: return
         import yaml
 
         retry = False
         with open(self.conf_save, 'r+') as src:
-            fcntl.lockf(src, fcntl.LOCK_SH)
+            portalocker.lock(src, portalocker.LOCK_SH)
+            # fcntl.lockf(src, fcntl.LOCK_SH)
             conf_raw = src.read()
             conf = yaml.load(io.BytesIO(conf_raw)) if conf_raw else dict()
+            # portalocker.unlock(src)
 
             conf_updated = False
             for ns, keys in self.conf_update_keys.viewitems():
@@ -94,14 +99,22 @@ class ConfigMixin(object):
                         prefix='{}.'.format(basename(self.conf_save)),
                         dir=dirname(self.conf_save), delete=False) as tmp:
                     try:
-                        fcntl.lockf(tmp, fcntl.LOCK_EX)
+                        portalocker.lock(tmp, portalocker.LOCK_EX)
+                        # fcntl.lockf(tmp, fcntl.LOCK_EX)
                         yaml.safe_dump(conf, tmp, default_flow_style=False)
                         tmp.flush()
-                        os.fchmod(tmp.fileno(),
-                                  stat.S_IMODE(os.fstat(src.fileno()).st_mode))
-
-                        fcntl.lockf(src, fcntl.LOCK_EX)
+                        try:
+                            os.fchmod(tmp.fileno(),
+                                      stat.S_IMODE(os.fstat(src.fileno()).st_mode))
+                        except AttributeError:
+                            print('pass')
+                            pass
+                        print(1)
+                        portalocker.lock(src, portalocker.LOCK_EX)
+                        print(2)
+                        # fcntl.lockf(src, fcntl.LOCK_EX)
                         src.seek(0)
+                        print(3)
                         if src.read() != conf_raw:
                             retry = True
                         else:
@@ -114,8 +127,10 @@ class ConfigMixin(object):
                             src.truncate()
                             src.write(tmp.read())
                             src.flush()
-
+                        print(4)
                     finally:
+                        # portalocker.unlock(tmp)
+                        # portalocker.unlock(src)
                         try:
                             os.unlink(tmp.name)
                         except OSError:

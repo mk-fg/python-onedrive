@@ -1,6 +1,10 @@
 python-skydrive
 ----------------------------------------
 
+I forked it from [mk-fg](https://github.com/mk-fg/python-skydrive). And I'm
+working on it to make sure it works well on windows 7. It can't work now.
+
+----------------------------------------
 Python and command-line interface for [SkyDrive API (version
 5.0)](http://msdn.microsoft.com/en-us/library/live/hh826521).
 

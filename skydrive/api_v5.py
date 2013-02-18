@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from os.path import join, basename
 import os, sys, urllib, urlparse, json, types
 
-from .conf import ConfigMixin
+from conf import ConfigMixin
 
 import logging
 
