@@ -95,7 +95,7 @@ class ConfigMixin(object):
 
             if conf_updated:
                 log.debug('Updating configuration file ({})'.format(src.name))
-                print(self.conf_save)
+                # print(self.conf_save)
                 with tempfile.NamedTemporaryFile(
                         prefix='{}.'.format(basename(self.conf_save)),
                         dir=dirname(self.conf_save), delete=False) as tmp:
