@@ -1,9 +1,31 @@
 python-skydrive
 ----------------------------------------
-
 I forked it from [mk-fg](https://github.com/mk-fg/python-skydrive). And I'm
 working on it to make sure it works well on windows 7. It can't work now.
 
+Schedule
+----------------------------------------
+    operations          windows 7   ubuntu
+    auth                    √          √
+    quota                   √          √
+    recent                  √          √
+    info                    √          √
+    info_set                x          x
+    link                    √          √
+    ls                      √          √
+    mkdir                   √          √
+    get                     x          x
+    put                     x          x
+    cp                      √          √
+    mv                      √          √
+    rm                      √          √
+    comments                √          √
+    comment_add             x          x
+    comment_delete          x          x
+    tree                    √          √
+
+
+python-skydrive
 ----------------------------------------
 Python and command-line interface for [SkyDrive API (version
 5.0)](http://msdn.microsoft.com/en-us/library/live/hh826521).
