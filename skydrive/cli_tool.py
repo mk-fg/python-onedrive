@@ -199,6 +199,7 @@ def main():
     elif optz.call == 'info':
         res = api.info(resolve_path(optz.object))
     elif optz.call == 'info_set':
+        print(optz.data)
         xres = api.info_update(
             resolve_path(optz.object), json.loads(optz.data))
     elif optz.call == 'link':

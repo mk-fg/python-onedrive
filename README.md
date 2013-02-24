@@ -10,18 +10,18 @@ Schedule
     quota                   √          √
     recent                  √          √
     info                    √          √
-    info_set                x          x
+    info_set                x          √
     link                    √          √
     ls                      √          √
     mkdir                   √          √
-    get                     x          x
-    put                     x          x
+    get                     x          √
+    put                     x          √
     cp                      √          √
     mv                      √          √
     rm                      √          √
     comments                √          √
-    comment_add             x          x
-    comment_delete          x          x
+    comment_add             √          √
+    comment_delete          √          √
     tree                    √          √
 
 
