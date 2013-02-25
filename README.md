@@ -20,8 +20,8 @@ Schedule
     mv                      √          √
     rm                      √          √
     comments                √          √
-    comment_add             x          √
-    comment_delete          x          √
+    comment_add             √          √
+    comment_delete          √          √
     tree                    √          √
 
 
