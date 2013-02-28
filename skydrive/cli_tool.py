@@ -23,8 +23,8 @@ def print_result(data, file=sys.stdout):
 
 
 def size_units(size,
-                _units=list(reversed(list((u, 2 ** (i * 10))
-                    for i, u in enumerate('BKMGT')))) ):
+               _units=list(reversed(list((u, 2 ** (i * 10))
+                   for i, u in enumerate('BKMGT')))) ):
     for u, u1 in _units:
         if size > u1: break
     return size / float(u1), u
@@ -107,6 +107,7 @@ def main():
 
     cmd = add_command('get', help='Download file contents.')
     cmd.add_argument('file', help='File (object) to read.')
+    cmd.add_argument('destFile', help='File (object) to save.')
     cmd.add_argument('-b', '--byte-range',
                      help='Specific range of bytes to read from a file (default: read all).'
                           ' Should be specified in rfc2616 Range HTTP header format.'
@@ -217,9 +218,11 @@ def main():
                          metadata=optz.metadata and json.loads(optz.metadata) or dict())
 
     elif optz.call == 'get':
-        sys.stdout.write(api.get(
-            resolve_path(optz.file), byte_range=optz.byte_range))
-        sys.stdout.flush()
+        with open(optz.destFile, "wb") as destFile:
+            destFile.write(api.get(resolve_path(optz.file), byte_range=optz.byte_range))
+        # sys.stdout.write(api.get(
+        #     resolve_path(optz.file), byte_range=optz.byte_range))
+        # sys.stdout.flush()
     elif optz.call == 'put':
         xres = api.put(optz.file,
                        resolve_path(optz.folder), overwrite=not optz.no_overwrite)
