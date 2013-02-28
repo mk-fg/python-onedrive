@@ -218,7 +218,7 @@ def main():
                          metadata=optz.metadata and json.loads(optz.metadata) or dict())
 
     elif optz.call == 'get':
-        destPath = os.path.split(optz.destFile)[0]
+        destPath = os.path.split(os.path.abspath(optz.destFile))[0]
         if not os.path.isdir(destPath):
             os.makedirs(destPath)
         with open(optz.destFile, "wb") as destFile:
