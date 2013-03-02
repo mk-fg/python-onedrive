@@ -15,7 +15,7 @@ Schedule
     ls                      √          √
     mkdir                   √          √
     get                     √          √
-    put                     x          √
+    put                     √          √
     cp                      √          √
     mv                      √          √
     rm                      √          √
@@ -210,6 +210,9 @@ without any installation, if that's the only thing you need there.
 
 * (optional, recommended) [PyYAML](http://pyyaml.org) - required for CLI tool
 	and optional persistent-state ("conf") module only.
+
+* [chardet](http://pypi.python.org/pypi/chardet) - used to detect the coding(like
+gbk, utf-8 and so on) of the argument from cmd to support Chinese.(added by Antonio)
 
 
 ### Known Issues

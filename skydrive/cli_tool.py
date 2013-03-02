@@ -7,6 +7,11 @@ from os.path import dirname, exists, isdir, join
 import os, sys, io, re, yaml, json
 
 try:
+    import chardet
+except ImportError: # optional
+    chardet = None
+
+try:
     from skydrive import api_v5, conf
 except ImportError:
     # Make sure it works from a checkout
@@ -33,6 +38,15 @@ def size_units(size,
 def id_match( s,
               _re_id=re.compile(r'^(file|folder)\.[0-9a-f]{16}\.[0-9A-F]{16}!\d+|folder\.[0-9a-f]{16}$') ):
     return s if _re_id.search(s) else None
+
+
+def decode_arg(arg):
+    'Convert cli argument to unicode.'
+    if arg is None: return None
+    if isinstance(arg, unicode):
+        return arg
+    return arg.decode(chardet.detect(arg)['encoding'])\
+        if chardet else arg.decode('utf-8')
 
 
 def main():
@@ -200,7 +214,6 @@ def main():
     elif optz.call == 'info':
         res = api.info(resolve_path(optz.object))
     elif optz.call == 'info_set':
-        print(optz.data)
         xres = api.info_update(
             resolve_path(optz.object), json.loads(optz.data))
     elif optz.call == 'link':
@@ -214,6 +227,7 @@ def main():
         res = api.comment_delete(optz.comment_id)
 
     elif optz.call == 'mkdir':
+        optz.name, optz.folder = it.imap(decode_arg, [optz.name, optz.folder])
         xres = api.mkdir(name=optz.name, folder_id=resolve_path(optz.folder),
                          metadata=optz.metadata and json.loads(optz.metadata) or dict())
 
@@ -223,9 +237,6 @@ def main():
             os.makedirs(destPath)
         with open(optz.destFile, "wb") as destFile:
             destFile.write(api.get(resolve_path(optz.file), byte_range=optz.byte_range))
-        # sys.stdout.write(api.get(
-        #     resolve_path(optz.file), byte_range=optz.byte_range))
-        # sys.stdout.flush()
     elif optz.call == 'put':
         xres = api.put(optz.file,
                        resolve_path(optz.folder), overwrite=not optz.no_overwrite)
