@@ -312,7 +312,11 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
             folder_id allows to specify a parent folder.
             metadata mapping may contain additional folder properties to pass to an API.'''
         metadata = metadata.copy()
-        if name: metadata['name'] = name
+        if name:
+            import chardet
+            # metadata['name'] = name
+            print(chardet.detect(name)['encoding'])
+            metadata['name'] = unicode(name, chardet.detect(name)['encoding'])
         return self(folder_id, data=metadata, method='post', auth_header=True)
 
     def delete(self, obj_id):

@@ -45,8 +45,8 @@ setup(
     # install_requires = [],
     extras_require=dict(
         standalone=['requests'],
-        cli=['PyYAML', 'requests'],
-        conf=['PyYAML', 'requests']),
+        cli=['PyYAML', 'requests', 'chardet'],
+        conf=['PyYAML', 'requests', 'chardet']),
 
     packages=find_packages(),
     include_package_data=True,
