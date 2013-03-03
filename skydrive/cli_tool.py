@@ -5,6 +5,7 @@ from __future__ import unicode_literals, print_function
 import itertools as it, operator as op, functools as ft
 from os.path import dirname, exists, isdir, join
 import os, sys, io, re, yaml, json
+import chardet
 
 try:
     from skydrive import api_v5, conf
@@ -24,7 +25,7 @@ def print_result(data, file=sys.stdout):
 
 def size_units(size,
                _units=list(reversed(list((u, 2 ** (i * 10))
-                   for i, u in enumerate('BKMGT')))) ):
+                                         for i, u in enumerate('BKMGT')))) ):
     for u, u1 in _units:
         if size > u1: break
     return size / float(u1), u
@@ -33,6 +34,20 @@ def size_units(size,
 def id_match( s,
               _re_id=re.compile(r'^(file|folder)\.[0-9a-f]{16}\.[0-9A-F]{16}!\d+|folder\.[0-9a-f]{16}$') ):
     return s if _re_id.search(s) else None
+
+
+def change_coding(*args):
+    '''Change coding to unicode'''
+    r = []
+    for arg in args:
+        if arg:
+            if type(arg) == unicode:
+                r.append(arg)
+            else:
+                r.append(unicode(arg, chardet.detect(arg)['encoding']))
+        else:
+            r.append(None)
+    return r
 
 
 def main():
@@ -214,6 +229,7 @@ def main():
         res = api.comment_delete(optz.comment_id)
 
     elif optz.call == 'mkdir':
+        optz.name, optz.folder = change_coding(optz.name, optz.folder)
         xres = api.mkdir(name=optz.name, folder_id=resolve_path(optz.folder),
                          metadata=optz.metadata and json.loads(optz.metadata) or dict())
 
@@ -223,9 +239,9 @@ def main():
             os.makedirs(destPath)
         with open(optz.destFile, "wb") as destFile:
             destFile.write(api.get(resolve_path(optz.file), byte_range=optz.byte_range))
-        # sys.stdout.write(api.get(
-        #     resolve_path(optz.file), byte_range=optz.byte_range))
-        # sys.stdout.flush()
+            # sys.stdout.write(api.get(
+            #     resolve_path(optz.file), byte_range=optz.byte_range))
+            # sys.stdout.flush()
     elif optz.call == 'put':
         xres = api.put(optz.file,
                        resolve_path(optz.folder), overwrite=not optz.no_overwrite)

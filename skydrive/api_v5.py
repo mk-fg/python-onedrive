@@ -5,7 +5,6 @@ import itertools as it, operator as op, functools as ft
 from datetime import datetime, timedelta
 from os.path import join, basename
 import os, sys, urllib, urlparse, json, types
-
 from conf import ConfigMixin
 
 import logging
@@ -192,8 +191,8 @@ class SkyDriveAuth(SkyDriveHTTPClient):
             post_data.update(
                 refresh_token=self.auth_refresh_token, grant_type='refresh_token')
         post_data_missing_keys = list(k for k in
-            ['client_id', 'client_secret', 'code', 'refresh_token', 'grant_type']
-            if k in post_data and not post_data[k])
+                                      ['client_id', 'client_secret', 'code', 'refresh_token', 'grant_type']
+                                      if k in post_data and not post_data[k])
         if post_data_missing_keys:
             raise AuthenticationError('Insufficient authentication'
                                       ' data provided (missing keys: {})'.format(post_data_missing_keys))
@@ -242,7 +241,7 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
             Shouldn't be used directly under most circumstances.'''
         if query_filter:
             query = dict((k, v) for k, v in
-                query.viewitems() if v is not None)
+                         query.viewitems() if v is not None)
         if auth_header:
             request_kwz.setdefault('headers', dict()) \
                 ['Authorization'] = 'Bearer {}'.format(self.auth_access_token)
@@ -313,10 +312,7 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
             metadata mapping may contain additional folder properties to pass to an API.'''
         metadata = metadata.copy()
         if name:
-            import chardet
-            # metadata['name'] = name
-            print(chardet.detect(name)['encoding'])
-            metadata['name'] = unicode(name, chardet.detect(name)['encoding'])
+            metadata['name'] = name
         return self(folder_id, data=metadata, method='post', auth_header=True)
 
     def delete(self, obj_id):
