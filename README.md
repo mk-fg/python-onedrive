@@ -1,32 +1,6 @@
 python-skydrive
 ----------------------------------------
-I forked it from [mk-fg](https://github.com/mk-fg/python-skydrive). And I'm
-working on it to make sure it works well on windows 7. It can't work now.
 
-Schedule
-----------------------------------------
-    operations          windows 7   ubuntu  Remark
-    auth                    √          √
-    quota                   √          √
-    recent                  √          √
-    info                    √          √
-    info_set                x          √    /python/你好/p.py {\"name\":\"你好.py\"}
-    link                    √          √
-    ls                      √          √
-    mkdir                   √          √
-    get                     √          √
-    put                     √          √
-    cp                      √          √
-    mv                      √          √
-    rm                      √          √
-    comments                √          √
-    comment_add             √          √
-    comment_delete          √          √    comment.262611c013bb05f6.262611C013BB05F6\!1837.262611C013BB05F6\!1842
-    tree                    √          √
-
-
-python-skydrive
-----------------------------------------
 Python and command-line interface for [SkyDrive API (version
 5.0)](http://msdn.microsoft.com/en-us/library/live/hh826521).
 
@@ -36,6 +10,10 @@ to a simple python methods.
 
 Module also comes with command-line tool to conveniently browse and manipulate
 SkyDrive contents from interactive shell or scripts.
+
+Thanks to AntonioChen for implementing windows and unicode support (see
+[#3](https://github.com/mk-fg/python-skydrive/pull/3)).
+
 
 
 Command-line usage
@@ -83,7 +61,8 @@ Then just type whatever commands you want to (and don't forget `skydrive-cli
 			image1.jpg: photo
 			image2.jpg: photo
 
-	% skydrive-cli get Pics/image1.jpg downloaded_image1.jpg
+	% skydrive-cli get Pics/image1.jpg > downloaded_image1.jpg  # linux only
+	% skydrive-cli get Pics/image1.jpg downloaded_image1.jpg    # linux and windows
 	% skydrive-cli put downloaded_image1.jpg
 	% skydrive-cli ls
 
@@ -208,11 +187,14 @@ without any installation, if that's the only thing you need there.
 	(I strongly recommend using version 0.14.0 or higher - ideally 1.0.0+, see
 	"Known Issues" section below for rationale)
 
+* (only on windows platforms) [win32all](http://sourceforge.net/projects/pywin32/)
+
 * (optional, recommended) [PyYAML](http://pyyaml.org) - required for CLI tool
 	and optional persistent-state ("conf") module only.
 
-* [chardet](http://pypi.python.org/pypi/chardet) - used to detect the coding(like
-gbk, utf-8 and so on) of the argument from cmd to support Chinese.(added by Antonio)
+* (optional, recommended) [chardet](http://pypi.python.org/pypi/chardet) - used
+	to detect encoding (utf-8, gbk and so on) of the command-line arguments to
+	support workng with non-ascii (e.g. cyrillic, chinese) names.
 
 
 ### Known Issues
