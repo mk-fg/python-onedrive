@@ -5,7 +5,6 @@ from __future__ import unicode_literals, print_function
 import itertools as it, operator as op, functools as ft
 from os.path import dirname, exists, isdir, join
 import os, sys, io, re, yaml, json
-import chardet
 
 try:
     from skydrive import api_v5, conf
@@ -38,28 +37,31 @@ def id_match( s,
 
 def change_coding(*args):
     '''Change coding to unicode'''
-    r = []
-    for arg in args:
-        if arg:
-            if type(arg) == unicode:
-                r.append(arg)
-            elif type(arg) == str:
-                det = chardet.detect(arg)
-                coding = 'gbk'
-                if det['confidence'] > 0.7:
-                    coding = det['encoding']
-                try:
-                    result = unicode(arg, coding)
-                except UnicodeDecodeError:
-                    coding = 'utf-8'
-                    result = unicode(arg, coding)
-                r.append(result)
-                print(arg, coding, result)
+    try:
+        import chardet
+
+        r = []
+        for arg in args:
+            if arg:
+                if type(arg) == unicode:
+                    r.append(arg)
+                elif type(arg) == str:
+                    det = chardet.detect(arg)
+                    coding = 'gbk'
+                    if det['confidence'] > 0.7:
+                        coding = det['encoding']
+                    try:
+                        result = unicode(arg, coding)
+                    except UnicodeDecodeError:
+                        coding = 'utf-8'
+                        result = unicode(arg, coding)
+                    r.append(result)
+                else:
+                    r.append(arg)
             else:
-                r.append(arg)
-        else:
-            r.append(None)
-    return r
+                r.append(None)
+    except ImportError:
+        return args
 
 
 def optz_decode(optz):
@@ -281,7 +283,6 @@ def main():
     elif optz.call == 'rm':
         for obj in it.imap(resolve_path, optz.object): xres = api.delete(obj)
 
-
     elif optz.call == 'tree':
         from yaml.dumper import SafeDumper
 
@@ -306,7 +307,10 @@ def main():
     else:
         parser.error('Unrecognized command: {}'.format(optz.call))
 
-    if res is not None: print_result(res)
+    if res is not None:
+        # print_result(res)
+        a = unicode(yaml.safe_dump(res, default_flow_style=False), 'utf-8').replace('\n', '\\n').replace('\r', '\\r')
+        print(eval("u'" + a + "'"))
     if optz.debug and xres is not None:
         buff = io.BytesIO()
         print_result(xres, file=buff)

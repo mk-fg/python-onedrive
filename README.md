@@ -10,7 +10,7 @@ Schedule
     quota                   √          √
     recent                  √          √
     info                    √          √
-    info_set                x          √    /python/你好/p.py {\"name\":\"你好.py\"}
+    info_set                √          √    /python/你好/p.py {\"name\":\"你好.py\"}
     link                    √          √
     ls                      √          √
     mkdir                   √          √
