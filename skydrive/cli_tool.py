@@ -42,11 +42,13 @@ def id_match( s,
 
 def decode_arg(arg):
     'Convert cli argument to unicode.'
-    if arg is None: return None
     if isinstance(arg, unicode):
         return arg
-    return arg.decode(chardet.detect(arg)['encoding'])\
-        if chardet else arg.decode('utf-8')
+    elif isinstance(arg, bytes):
+        return arg.decode(chardet.detect(arg)['encoding'])\
+            if chardet else arg.decode('utf-8')
+    else:
+        return arg
 
 
 def main():
@@ -121,7 +123,7 @@ def main():
 
     cmd = add_command('get', help='Download file contents.')
     cmd.add_argument('file', help='File (object) to read.')
-    cmd.add_argument('destFile', help='File (object) to save.')
+    cmd.add_argument('file_dst', nargs='?', help='Name/path to save file (object) as.')
     cmd.add_argument('-b', '--byte-range',
                      help='Specific range of bytes to read from a file (default: read all).'
                           ' Should be specified in rfc2616 Range HTTP header format.'
@@ -172,6 +174,7 @@ def main():
                      help='Folder to display contents of (default: %(default)s).')
 
     optz = parser.parse_args()
+
     if optz.path and optz.id:
         parser.error('--path and --id options cannot be used together.')
 
@@ -185,6 +188,13 @@ def main():
     res = xres = None
     resolve_path = ( (lambda s: id_match(s) or api.resolve_path(s)) \
                          if not optz.path else api.resolve_path ) if not optz.id else lambda obj_id: obj_id
+
+    # Make best-effort to decode all CLI options to unicode
+    for k, v in vars(optz).viewitems():
+        if isinstance(v, bytes):
+            setattr(optz, k, decode_arg(v))
+        elif isinstance(v, list):
+            setattr(optz, k, map(decode_arg, v))
 
     if optz.call == 'auth':
         if not optz.url:
@@ -218,7 +228,6 @@ def main():
             resolve_path(optz.object), json.loads(optz.data))
     elif optz.call == 'link':
         res = api.link(resolve_path(optz.object), optz.type)
-
     elif optz.call == 'comments':
         res = api.comments(resolve_path(optz.object))
     elif optz.call == 'comment_add':
@@ -227,16 +236,21 @@ def main():
         res = api.comment_delete(optz.comment_id)
 
     elif optz.call == 'mkdir':
-        optz.name, optz.folder = it.imap(decode_arg, [optz.name, optz.folder])
         xres = api.mkdir(name=optz.name, folder_id=resolve_path(optz.folder),
                          metadata=optz.metadata and json.loads(optz.metadata) or dict())
 
     elif optz.call == 'get':
-        destPath = os.path.split(os.path.abspath(optz.destFile))[0]
-        if not os.path.isdir(destPath):
-            os.makedirs(destPath)
-        with open(optz.destFile, "wb") as destFile:
-            destFile.write(api.get(resolve_path(optz.file), byte_range=optz.byte_range))
+        contents = api.get(resolve_path(optz.file), byte_range=optz.byte_range)
+        if optz.file_dst:
+            dst_dir = os.path.dirname(os.path.abspath(optz.file_dst))
+            if not os.path.isdir(dst_dir):
+                os.makedirs(dst_dir)
+            with open(optz.file_dst, "wb") as dst:
+                dst.write(contents)
+        else:
+            sys.stdout.write(contents)
+            sys.stdout.flush()
+
     elif optz.call == 'put':
         xres = api.put(optz.file,
                        resolve_path(optz.folder), overwrite=not optz.no_overwrite)

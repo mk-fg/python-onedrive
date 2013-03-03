@@ -14,7 +14,7 @@ except IOError:
 setup(
 
     name='python-skydrive',
-    version='13.03.3',
+    version='13.03.10',
     author='Mike Kazantsev',
     author_email='mk.fraggod@gmail.com',
     license='WTFPL',
