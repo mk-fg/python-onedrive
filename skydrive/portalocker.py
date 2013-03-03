@@ -19,7 +19,9 @@ if os.name == 'nt':
         win32file.UnlockFileEx(hfile, 0, 0x7FFFFFFF, __overlapped)
 elif os.name == 'posix':
     import fcntl
-    # from fcntl import LOCK_EX, LOCK_SH, LOCK_NB
+    LOCK_EX = fcntl.LOCK_EX
+    LOCK_SH = fcntl.LOCK_SH
+    LOCK_NB = fcntl.LOCK_NB
 
     def lock(file, flags):
         fcntl.flock(file.fileno(), flags)
