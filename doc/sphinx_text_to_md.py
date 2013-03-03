@@ -10,71 +10,74 @@ class FormatError(Exception): pass
 
 
 def main():
-	import argparse
-	parser = argparse.ArgumentParser(
-		description='Convert sphinx-produced autodoc.apidoc text to markdown.')
-	parser.add_argument('src', nargs='?', help='Source file (default: use stdin).')
-	optz = parser.parse_args()
+    import argparse
 
-	src = open(optz.src) if optz.src else sys.stdin
-	dst = sys.stdout
+    parser = argparse.ArgumentParser(
+        description='Convert sphinx-produced autodoc.apidoc text to markdown.')
+    parser.add_argument('src', nargs='?', help='Source file (default: use stdin).')
+    optz = parser.parse_args()
 
-	py_name = r'[\w_\d]+'
-	out = ft.partial(print, file=dst)
+    src = open(optz.src) if optz.src else sys.stdin
+    dst = sys.stdout
 
-	st_attrdoc = 0
-	st_cont, lse_nl = False, None
+    py_name = r'[\w_\d]+'
+    out = ft.partial(print, file=dst)
 
-	for line in src:
-		ls = line.strip()
-		if not ls: # blank line
-			out(line, end='')
-			continue
+    st_attrdoc = 0
+    st_cont, lse_nl = False, None
 
-		line_indent = re.search(r'^( +)', line)
-		if not line_indent: line_indent = 0
-		else:
-			line_indent = len(line_indent.group(1))
-			if line_indent % 3: raise FormatError('Weird indent size: {}'.format(line_indent))
-			line_indent = line_indent / 3
+    for line in src:
+        ls = line.strip()
+        if not ls: # blank line
+            out(line, end='')
+            continue
 
-		lp = line.split()
-		lse = re.sub(r'(<\S+) at 0x[\da-f]+(>)', r'\1\2', ls)
-		lse = re.sub(r'([_*<>])', r'\\\1', lse)
-		for url in re.findall(r'\b\w+://\S+', lse):
-			lse = lse.replace(url, url.replace(r'\_', '_'))
-		lse = re.sub(r'\bu([\'"])', r'\1', lse)
-		st_cont, lse_nl = bool(lse_nl), '' if re.search(r'\b\w+://\S+-$', lse) else '\n'
+        line_indent = re.search(r'^( +)', line)
+        if not line_indent:
+            line_indent = 0
+        else:
+            line_indent = len(line_indent.group(1))
+            if line_indent % 3: raise FormatError('Weird indent size: {}'.format(line_indent))
+            line_indent = line_indent / 3
 
-		st_attrdoc_reset = True
-		if not line_indent:
-			if len(lp) > 2 and lp[0] == lp[1]:
-				if lp[0] in ('exception', 'class'): # class, exception
-					out('\n'*1, end='')
-					out('* **{}**'.format(' '.join(lse.split()[1:])))
+        lp = line.split()
+        lse = re.sub(r'(<\S+) at 0x[\da-f]+(>)', r'\1\2', ls)
+        lse = re.sub(r'([_*<>])', r'\\\1', lse)
+        for url in re.findall(r'\b\w+://\S+', lse):
+            lse = lse.replace(url, url.replace(r'\_', '_'))
+        lse = re.sub(r'\bu([\'"])', r'\1', lse)
+        st_cont, lse_nl = bool(lse_nl), '' if re.search(r'\b\w+://\S+-$', lse) else '\n'
 
-			else:
-				raise FormatError('Unhandled: {!r}'.format(line))
+        st_attrdoc_reset = True
+        if not line_indent:
+            if len(lp) > 2 and lp[0] == lp[1]:
+                if lp[0] in ('exception', 'class'): # class, exception
+                    out('\n' * 1, end='')
+                    out('* **{}**'.format(' '.join(lse.split()[1:])))
 
-		elif line_indent == 1:
-			if re.search(r'^(\w+ )?{}\('.format(py_name), ls): # function
-				out('\n'*1, end='')
-				out('{}* {}'.format(' '*4, lse))
-				st_attrdoc, st_attrdoc_reset = 8, False
-			elif re.search(r'^{}\s+=\s+'.format(py_name), ls): # attribute
-				out('{}* {}'.format(' '*4, lse))
-				st_attrdoc, st_attrdoc_reset = 8, False
-			elif lp[0] == 'Bases:': # class bases
-				out('{}{}'.format(' '*4, lse))
-				st_attrdoc, st_attrdoc_reset = 4, False
-			else: out('{}{}'.format(' '*(4 * st_cont), ls), end=lse_nl) # class docstring
+            else:
+                raise FormatError('Unhandled: {!r}'.format(line))
 
-		else: # description line
-			if ls[0] in '-*': line = '\\' + line.lstrip()
-			out('{}{}'.format(' '*(st_attrdoc * st_cont), line.strip()), end=lse_nl)
-			st_attrdoc_reset = False
+        elif line_indent == 1:
+            if re.search(r'^(\w+ )?{}\('.format(py_name), ls): # function
+                out('\n' * 1, end='')
+                out('{}* {}'.format(' ' * 4, lse))
+                st_attrdoc, st_attrdoc_reset = 8, False
+            elif re.search(r'^{}\s+=\s+'.format(py_name), ls): # attribute
+                out('{}* {}'.format(' ' * 4, lse))
+                st_attrdoc, st_attrdoc_reset = 8, False
+            elif lp[0] == 'Bases:': # class bases
+                out('{}{}'.format(' ' * 4, lse))
+                st_attrdoc, st_attrdoc_reset = 4, False
+            else:
+                out('{}{}'.format(' ' * (4 * st_cont), ls), end=lse_nl) # class docstring
 
-		if st_attrdoc and st_attrdoc_reset: st_attrdoc = 0
+        else: # description line
+            if ls[0] in '-*': line = '\\' + line.lstrip()
+            out('{}{}'.format(' ' * (st_attrdoc * st_cont), line.strip()), end=lse_nl)
+            st_attrdoc_reset = False
+
+        if st_attrdoc and st_attrdoc_reset: st_attrdoc = 0
 
 
 if __name__ == '__main__': main()
