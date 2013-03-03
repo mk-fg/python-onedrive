@@ -5,12 +5,12 @@ working on it to make sure it works well on windows 7. It can't work now.
 
 Schedule
 ----------------------------------------
-    operations          windows 7   ubuntu
+    operations          windows 7   ubuntu  Remark
     auth                    √          √
     quota                   √          √
     recent                  √          √
     info                    √          √
-    info_set                x          √
+    info_set                x          √    /python/你好/p.py {\"name\":\"你好.py\"}
     link                    √          √
     ls                      √          √
     mkdir                   √          √
@@ -21,7 +21,7 @@ Schedule
     rm                      √          √
     comments                √          √
     comment_add             √          √
-    comment_delete          √          √
+    comment_delete          √          √    comment.262611c013bb05f6.262611C013BB05F6\!1837.262611C013BB05F6\!1842
     tree                    √          √
 
 

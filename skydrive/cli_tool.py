@@ -43,11 +43,34 @@ def change_coding(*args):
         if arg:
             if type(arg) == unicode:
                 r.append(arg)
+            elif type(arg) == str:
+                det = chardet.detect(arg)
+                coding = 'gbk'
+                if det['confidence'] > 0.7:
+                    coding = det['encoding']
+                try:
+                    result = unicode(arg, coding)
+                except UnicodeDecodeError:
+                    coding = 'utf-8'
+                    result = unicode(arg, coding)
+                r.append(result)
+                print(arg, coding, result)
             else:
-                r.append(unicode(arg, chardet.detect(arg)['encoding']))
+                r.append(arg)
         else:
             r.append(None)
     return r
+
+
+def optz_decode(optz):
+    for x in dir(optz):
+        if getattr(optz, x):
+            if type(getattr(optz, x)) == str:
+                setattr(optz, x, change_coding(getattr(optz, x))[0])
+            elif getattr(optz, x) and type(getattr(optz, x)) == list:
+                for n in range(len(getattr(optz, x))):
+                    getattr(optz, x)[n], = change_coding(getattr(optz, x)[n])
+    return optz
 
 
 def main():
@@ -122,7 +145,7 @@ def main():
 
     cmd = add_command('get', help='Download file contents.')
     cmd.add_argument('file', help='File (object) to read.')
-    cmd.add_argument('destFile', help='File (object) to save.')
+    cmd.add_argument('destFile', nargs='?', help='File (object) to save.')
     cmd.add_argument('-b', '--byte-range',
                      help='Specific range of bytes to read from a file (default: read all).'
                           ' Should be specified in rfc2616 Range HTTP header format.'
@@ -172,7 +195,8 @@ def main():
                      nargs='?', default='me/skydrive',
                      help='Folder to display contents of (default: %(default)s).')
 
-    optz = parser.parse_args()
+    optz = optz_decode(parser.parse_args())
+
     if optz.path and optz.id:
         parser.error('--path and --id options cannot be used together.')
 
@@ -186,6 +210,10 @@ def main():
     res = xres = None
     resolve_path = ( (lambda s: id_match(s) or api.resolve_path(s)) \
                          if not optz.path else api.resolve_path ) if not optz.id else lambda obj_id: obj_id
+
+    for x in optz.__dict__:
+        if type(getattr(optz, x)) == str:
+            setattr(optz, x, change_coding(getattr(optz, x))[0])
 
     if optz.call == 'auth':
         if not optz.url:
@@ -215,12 +243,10 @@ def main():
     elif optz.call == 'info':
         res = api.info(resolve_path(optz.object))
     elif optz.call == 'info_set':
-        print(optz.data)
         xres = api.info_update(
             resolve_path(optz.object), json.loads(optz.data))
     elif optz.call == 'link':
         res = api.link(resolve_path(optz.object), optz.type)
-
     elif optz.call == 'comments':
         res = api.comments(resolve_path(optz.object))
     elif optz.call == 'comment_add':
@@ -229,19 +255,21 @@ def main():
         res = api.comment_delete(optz.comment_id)
 
     elif optz.call == 'mkdir':
-        optz.name, optz.folder = change_coding(optz.name, optz.folder)
+        # optz.name, optz.folder = change_coding(optz.name, optz.folder)
         xres = api.mkdir(name=optz.name, folder_id=resolve_path(optz.folder),
                          metadata=optz.metadata and json.loads(optz.metadata) or dict())
 
     elif optz.call == 'get':
-        destPath = os.path.split(os.path.abspath(optz.destFile))[0]
-        if not os.path.isdir(destPath):
-            os.makedirs(destPath)
-        with open(optz.destFile, "wb") as destFile:
-            destFile.write(api.get(resolve_path(optz.file), byte_range=optz.byte_range))
-            # sys.stdout.write(api.get(
-            #     resolve_path(optz.file), byte_range=optz.byte_range))
-            # sys.stdout.flush()
+        r = api.get(resolve_path(optz.file), byte_range=optz.byte_range)
+        if optz.destFile:
+            destPath = os.path.split(os.path.abspath(optz.destFile))[0]
+            if not os.path.isdir(destPath):
+                os.makedirs(destPath)
+            with open(optz.destFile, "wb") as destFile:
+                destFile.write(r)
+        else:
+            sys.stdout.write(r)
+            sys.stdout.flush()
     elif optz.call == 'put':
         xres = api.put(optz.file,
                        resolve_path(optz.folder), overwrite=not optz.no_overwrite)
