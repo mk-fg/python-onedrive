@@ -63,7 +63,7 @@ def change_coding(*args):
 
 
 def optz_decode(optz):
-    for x in dir(optz):
+    for x in optz.__dict__:
         if getattr(optz, x):
             if type(getattr(optz, x)) == str:
                 setattr(optz, x, change_coding(getattr(optz, x))[0])
