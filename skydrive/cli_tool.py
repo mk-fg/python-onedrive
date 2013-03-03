@@ -60,6 +60,7 @@ def change_coding(*args):
                     r.append(arg)
             else:
                 r.append(None)
+        return r
     except ImportError:
         return args
 

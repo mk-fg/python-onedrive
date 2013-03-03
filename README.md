@@ -1,9 +1,10 @@
 python-skydrive
 ----------------------------------------
-I forked it from [mk-fg](https://github.com/mk-fg/python-skydrive). And I'm
-working on it to make sure it works well on windows 7. It can't work now.
+I forked it from [mk-fg](https://github.com/mk-fg/python-skydrive). Big thanks to mk-fg. This is what I did:
+* Make it work well on both windows 7 and ubuntu 12.10. Never test it on other os.
+* Support Chinese.
 
-Schedule
+Schedule(Command-line)
 ----------------------------------------
     operations          windows 7   ubuntu  Remark
     auth                    √          √
@@ -83,7 +84,8 @@ Then just type whatever commands you want to (and don't forget `skydrive-cli
 			image1.jpg: photo
 			image2.jpg: photo
 
-	% skydrive-cli get Pics/image1.jpg downloaded_image1.jpg
+	% skydrive-cli get Pics/image1.jpg > downloaded_image1.jpg  # linux only
+	% skydrive-cli get Pics/image1.jpg downloaded_image1.jpg    # windows only
 	% skydrive-cli put downloaded_image1.jpg
 	% skydrive-cli ls
 
@@ -208,11 +210,13 @@ without any installation, if that's the only thing you need there.
 	(I strongly recommend using version 0.14.0 or higher - ideally 1.0.0+, see
 	"Known Issues" section below for rationale)
 
+* (optional, recommended, windows 7 necessary) [win32all](http://sourceforge.net/projects/pywin32/)
+
 * (optional, recommended) [PyYAML](http://pyyaml.org) - required for CLI tool
 	and optional persistent-state ("conf") module only.
 
-* [chardet](http://pypi.python.org/pypi/chardet) - used to detect the coding(like
-gbk, utf-8 and so on) of the argument from cmd to support Chinese.(added by Antonio)
+* (optional, recommended) [chardet](http://pypi.python.org/pypi/chardet) - used to detect the coding(like
+gbk, utf-8 and so on) of the argument from cmd to support Chinese.
 
 
 ### Known Issues
