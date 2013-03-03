@@ -85,7 +85,7 @@ Then just type whatever commands you want to (and don't forget `skydrive-cli
 			image2.jpg: photo
 
 	% skydrive-cli get Pics/image1.jpg > downloaded_image1.jpg  # linux only
-	% skydrive-cli get Pics/image1.jpg downloaded_image1.jpg    # windows only
+	% skydrive-cli get Pics/image1.jpg downloaded_image1.jpg    # linux && windows
 	% skydrive-cli put downloaded_image1.jpg
 	% skydrive-cli ls
 

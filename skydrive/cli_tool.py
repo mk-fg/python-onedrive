@@ -258,7 +258,6 @@ def main():
         res = api.comment_delete(optz.comment_id)
 
     elif optz.call == 'mkdir':
-        # optz.name, optz.folder = change_coding(optz.name, optz.folder)
         xres = api.mkdir(name=optz.name, folder_id=resolve_path(optz.folder),
                          metadata=optz.metadata and json.loads(optz.metadata) or dict())
 
