@@ -24,9 +24,11 @@ except ImportError:
         import api_v5, conf
 
 
+force_encoding = None
+
 def tree_node(): return defaultdict(tree_node)
 
-def print_result(data, file=sys.stdout, indent='', indent_level=' '*2):
+def print_result(data, file, indent='', indent_level=' '*2):
     if isinstance(data, list):
         for v in data:
             print_result(v, file=file, indent=indent + '- ')
@@ -41,6 +43,21 @@ def print_result(data, file=sys.stdout, indent='', indent_level=' '*2):
     else:
         print(indent + decode_obj(data, force=True), file=file)
 
+def decode_obj(obj, force=False):
+    'Convert or dump object to unicode.'
+    if isinstance(obj, unicode):
+        return obj
+    elif isinstance(obj, bytes):
+        if force_encoding is not None:
+            return obj.decode(force_encoding)
+        if chardet:
+            enc_guess = chardet.detect(obj)
+            if enc_guess['confidence'] > 0.7:
+                return obj.decode(enc_guess['encoding'])
+        return obj.decode('utf-8')
+    else:
+        return obj if not dump else repr(obj)
+
 
 def size_units(size,
                _units=list(reversed(list((u, 2 ** (i * 10))
@@ -53,17 +70,6 @@ def size_units(size,
 def id_match( s,
               _re_id=re.compile(r'^(file|folder)\.[0-9a-f]{16}\.[0-9A-F]{16}!\d+|folder\.[0-9a-f]{16}$') ):
     return s if _re_id.search(s) else None
-
-
-def decode_obj(obj, force=False):
-    'Convert object to unicode.'
-    if isinstance(obj, unicode):
-        return obj
-    elif isinstance(obj, bytes):
-        return obj.decode(chardet.detect(obj)['encoding'])\
-            if chardet else obj.decode('utf-8')
-    else:
-        return obj if not dump else repr(obj)
 
 
 def main():
@@ -84,6 +90,13 @@ def main():
                              ' of objects in the same parent folder might be used.')
     parser.add_argument('-i', '--id', action='store_true',
                         help='Interpret file/folder arguments only as ids (default: guess).')
+
+    parser.add_argument('-e', '--encoding', metavar='enc',
+                        action='store', help='Use specified encoding (example: utf-8) for CLI input/output.'
+                             ' See full list of supported encodings at:'
+                                 ' http://docs.python.org/2/library/codecs.html#standard-encodings .'
+                             ' Default behavior is to detect input encoding via chardet module,'
+                                 ' if available, falling back to utf-8 and use terminal encoding for output.')
 
     parser.add_argument('--debug',
                         action='store_true', help='Verbose operation mode.')
@@ -193,6 +206,14 @@ def main():
     if optz.path and optz.id:
         parser.error('--path and --id options cannot be used together.')
 
+    if optz.encoding:
+        global force_encoding
+        force_encoding = optz.encoding
+
+        import codecs
+        sys.stdin = codecs.getreader(optz.encoding)(sys.stdin)
+        sys.stdout = codecs.getwriter(optz.encoding)(sys.stdout)
+
     import logging
 
     log = logging.getLogger()
@@ -294,7 +315,7 @@ def main():
     else:
         parser.error('Unrecognized command: {}'.format(optz.call))
 
-    if res is not None: print_result(res)
+    if res is not None: print_result(res, file=sys.stdout)
     if optz.debug and xres is not None:
         buff = io.BytesIO()
         print_result(xres, file=buff)
