@@ -192,9 +192,10 @@ without any installation, if that's the only thing you need there.
 * (optional, recommended) [PyYAML](http://pyyaml.org) - required for CLI tool
 	and optional persistent-state ("conf") module only.
 
-* (optional, recommended) [chardet](http://pypi.python.org/pypi/chardet) - used
-	to detect encoding (utf-8, gbk and so on) of the command-line arguments to
-	support workng with non-ascii (e.g. cyrillic, chinese) names.
+* (optional) [chardet](http://pypi.python.org/pypi/chardet) - used to detect
+	encoding (utf-8, gbk, koi8-r, etc) of the command-line arguments to support
+	workng with non-ascii (e.g. cyrillic, chinese) names, if it's not specified
+	explicitly.
 
 
 ### Known Issues
