@@ -38,7 +38,7 @@ def print_result(data, file, indent='', indent_level=' '*2):
             if not isinstance(v, (list, dict)): # peek to display simple types inline
                 print_result(v, file=file, indent=' ')
             else:
-                print(file=file)
+                print('', file=file)
                 print_result(v, file=file, indent=indent+indent_level)
     else:
         print(indent + decode_obj(data, force=True), file=file)
@@ -317,7 +317,7 @@ def main():
 
     if res is not None: print_result(res, file=sys.stdout)
     if optz.debug and xres is not None:
-        buff = io.BytesIO()
+        buff = io.StringIO()
         print_result(xres, file=buff)
         log.debug('Call result:\n{0}\n{1}{0}'.format('-' * 20, buff.getvalue()))
 
