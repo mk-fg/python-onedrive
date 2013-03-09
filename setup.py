@@ -14,8 +14,8 @@ except IOError:
 setup(
 
     name='python-skydrive',
-    version='13.03.12',
-    author='Mike Kazantsev',
+    version='13.03.13',
+    author='Mike Kazantsev, Antonio Chen',
     author_email='mk.fraggod@gmail.com',
     license='WTFPL',
     keywords='skydrive api oauth2 rest microsoft cloud live liveconnect',
@@ -45,8 +45,8 @@ setup(
     # install_requires = [],
     extras_require=dict(
         standalone=['requests'],
-        cli=['PyYAML', 'requests', 'chardet'],
-        conf=['PyYAML', 'requests', 'chardet']),
+        cli=['PyYAML', 'requests'],
+        conf=['PyYAML', 'requests']),
 
     packages=find_packages(),
     include_package_data=True,
