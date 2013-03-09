@@ -186,10 +186,12 @@ without any installation, if that's the only thing you need there.
 	higher are strongly recommended - ideally 1.0.0+ (see "Known Issues" section
 	below for rationale)
 
-* (only on windows platforms) [win32all](http://sourceforge.net/projects/pywin32/)
-
 * (optional, recommended) [PyYAML](http://pyyaml.org) - required for CLI tool
 	and optional persistent-state ("conf") module only.
+
+* (only on windows) [pywin32](http://sourceforge.net/projects/pywin32/) - for
+	CLI tool (used to lock configuration file on changes) and optional conf module
+	only.
 
 * (optional) [chardet](http://pypi.python.org/pypi/chardet) - used to detect
 	encoding (utf-8, gbk, koi8-r, etc) of the command-line arguments to support

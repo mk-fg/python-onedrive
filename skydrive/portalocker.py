@@ -1,9 +1,13 @@
 #-*- coding: utf-8 -*-
 
 import os
-# needs win32all to work on Windows (NT, 2K, XP, _not_ /95 or /98)
+
 if os.name == 'nt':
-    import win32con, win32file, pywintypes
+    # Needs pywin32 to work on Windows (NT, 2K, XP, _not_ /95 or /98)
+    try: import win32con, win32file, pywintypes
+    except ImportError as err:
+        raise ImportError( 'Failed to import pywin32'
+            ' extensions (make sure pywin32 is installed correctly) - {}'.format(err) )
 
     LOCK_EX = win32con.LOCKFILE_EXCLUSIVE_LOCK
     LOCK_SH = 0 # the default
@@ -17,6 +21,7 @@ if os.name == 'nt':
     def unlock(file):
         hfile = win32file._get_osfhandle(file.fileno())
         win32file.UnlockFileEx(hfile, 0, 0x7FFFFFFF, __overlapped)
+
 elif os.name == 'posix':
     import fcntl
     from fcntl import LOCK_EX, LOCK_SH, LOCK_NB
