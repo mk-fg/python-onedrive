@@ -56,7 +56,7 @@ def decode_obj(obj, force=False):
                 return obj.decode(enc_guess['encoding'])
         return obj.decode('utf-8')
     else:
-        return obj if not dump else repr(obj)
+        return obj if not force else repr(obj)
 
 
 def size_units(size,
