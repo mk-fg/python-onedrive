@@ -182,9 +182,9 @@ without any installation, if that's the only thing you need there.
 * [Python 2.7 (not 3.X)](http://python.org/)
 
 * (unless your plan is to override that)
-	[requests](http://docs.python-requests.org/en/latest/)
-	(I strongly recommend using version 0.14.0 or higher - ideally 1.0.0+, see
-	"Known Issues" section below for rationale)
+	[requests](http://docs.python-requests.org/en/latest/) - versions 0.14.0 or
+	higher are strongly recommended - ideally 1.0.0+ (see "Known Issues" section
+	below for rationale)
 
 * (only on windows platforms) [win32all](http://sourceforge.net/projects/pywin32/)
 
@@ -205,10 +205,10 @@ public.bay.livefilestore.com seem to be broken, choking if client advertise TLS
 support.
 
 Underlying HTTP protocol implementation module - requests - of versions earlier
-than 0.14.0 might have an issue with that (later version can either work around
+than 0.14.0 might have an issue with that (later versions can either work around
 it or patched in this module).
 
-So be sure to use requests 0.14.0 or higher - ideally, 1.0.0 or later versions,
+So be sure to use requests 0.14.0 or higher - ideally 1.0.0 or later versions,
 where no dirty workarounds are necessary.
 
 For more details see these links:
