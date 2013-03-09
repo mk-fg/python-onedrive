@@ -3,7 +3,7 @@
 from __future__ import unicode_literals, print_function
 
 import itertools as it, operator as op, functools as ft
-from os.path import dirname, exists, isdir, join
+from os.path import dirname, basename, exists, isdir, join, abspath
 from collections import defaultdict
 import os, sys, io, re, types, json
 
@@ -69,7 +69,7 @@ def size_units(size,
 
 def id_match( s,
               _re_id=re.compile(r'^(file|folder)\.[0-9a-f]{16}\.[0-9A-F]{16}!\d+|folder\.[0-9a-f]{16}$') ):
-    return s if _re_id.search(s) else None
+    return s if s and _re_id.search(s) else None
 
 
 def main():
@@ -141,10 +141,11 @@ def main():
                      help='Folder to list contents of (default: %(default)s).')
 
     cmd = add_command('mkdir', help='Create a folder.')
-    cmd.add_argument('name', help='Name of a folder to create.')
+    cmd.add_argument('name',
+                     help='Name (or a path consisting of dirname + basename) of a folder to create.')
     cmd.add_argument('folder',
-                     nargs='?', default='me/skydrive',
-                     help='Parent folder (default: %(default)s).')
+                     nargs='?', default=None,
+                     help='Parent folder (default: me/skydrive).')
     cmd.add_argument('-m', '--metadata',
                      help='JSON mappings of metadata to set for the created folder.'
                           ' Optonal. Example: {"description": "Photos from last trip to Mordor"}')
@@ -222,8 +223,9 @@ def main():
 
     api = api_v5.PersistentSkyDriveAPI.from_conf(optz.config)
     res = xres = None
-    resolve_path = ( (lambda s: id_match(s) or api.resolve_path(s)) \
-                         if not optz.path else api.resolve_path ) if not optz.id else lambda obj_id: obj_id
+    resolve_path_wrap = lambda s: api.resolve_path(s and s.replace('\\', '/').strip('/'))
+    resolve_path = ( (lambda s: id_match(s) or resolve_path_wrap(s)) \
+                         if not optz.path else resolve_path_wrap ) if not optz.id else lambda obj_id: obj_id
 
     # Make best-effort to decode all CLI options to unicode
     for k, v in vars(optz).viewitems():
@@ -272,14 +274,19 @@ def main():
         res = api.comment_delete(optz.comment_id)
 
     elif optz.call == 'mkdir':
-        xres = api.mkdir(name=optz.name, folder_id=resolve_path(optz.folder),
+        name, path = optz.name, optz.folder
+        if '/' in name.replace('\\', '/'):
+            name = optz.name.replace('\\', '/')
+            name, path_ext = basename(name), dirname(name)
+            path = join(path, path_ext.strip('/')) if path else path_ext
+        xres = api.mkdir(name=name, folder_id=resolve_path(path),
                          metadata=optz.metadata and json.loads(optz.metadata) or dict())
 
     elif optz.call == 'get':
         contents = api.get(resolve_path(optz.file), byte_range=optz.byte_range)
         if optz.file_dst:
-            dst_dir = os.path.dirname(os.path.abspath(optz.file_dst))
-            if not os.path.isdir(dst_dir):
+            dst_dir = dirname(abspath(optz.file_dst))
+            if not isdir(dst_dir):
                 os.makedirs(dst_dir)
             with open(optz.file_dst, "wb") as dst:
                 dst.write(contents)
