@@ -3,9 +3,7 @@ from __future__ import unicode_literals, print_function
 
 import itertools as it, operator as op, functools as ft
 import os, sys, io, errno, tempfile, stat
-# import fcntl
 from os.path import dirname, basename
-import portalocker
 
 import logging
 
@@ -38,6 +36,7 @@ class ConfigMixin(object):
     def from_conf(cls, path=None, **overrides):
         '''Initialize instance from YAML configuration file,
             writing updates (only to keys, specified by "conf_update_keys") back to it.'''
+        from skydrive import portalocker
         import yaml
 
         if path is None:
@@ -46,7 +45,6 @@ class ConfigMixin(object):
         path = os.path.expanduser(path)
         with open(path, 'r') as src:
             portalocker.lock(src, portalocker.LOCK_SH)
-            # fcntl.lockf(src, fcntl.LOCK_SH)
             conf = yaml.load(src.read())
             portalocker.unlock(src)
         conf.setdefault('conf_save', path)
@@ -71,12 +69,12 @@ class ConfigMixin(object):
 
     def sync(self):
         if not self.conf_save: return
+        from skydrive import portalocker
         import yaml
 
         retry = False
         with open(self.conf_save, 'r+') as src:
             portalocker.lock(src, portalocker.LOCK_SH)
-            # fcntl.lockf(src, fcntl.LOCK_SH)
             conf_raw = src.read()
             conf = yaml.load(io.BytesIO(conf_raw)) if conf_raw else dict()
             portalocker.unlock(src)
@@ -100,7 +98,6 @@ class ConfigMixin(object):
                         dir=dirname(self.conf_save), delete=False) as tmp:
                     try:
                         portalocker.lock(tmp, portalocker.LOCK_EX)
-                        # fcntl.lockf(tmp, fcntl.LOCK_EX)
                         yaml.safe_dump(conf, tmp, default_flow_style=False)
                         tmp.flush()
                         try:
@@ -109,7 +106,6 @@ class ConfigMixin(object):
                         except AttributeError:
                             pass
                         portalocker.lock(src, portalocker.LOCK_EX)
-                        # fcntl.lockf(src, fcntl.LOCK_EX)
                         src.seek(0)
                         if src.read() != conf_raw:
                             retry = True
@@ -118,8 +114,8 @@ class ConfigMixin(object):
                             try:
                                 os.rename(tmp.name, src.name)
                             except WindowsError:
-                            # Non-atomic update for pids that already have fd to old file,
-                            #  but (presumably) are waiting for the write-lock to be released
+                                # Non-atomic update for pids that already have fd to old file,
+                                #  but (presumably) are waiting for the write-lock to be released
                                 src.seek(0), tmp.seek(0)
                                 src.truncate()
                                 src.write(tmp.read())
