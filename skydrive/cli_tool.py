@@ -4,7 +4,8 @@ from __future__ import unicode_literals, print_function
 
 import itertools as it, operator as op, functools as ft
 from os.path import dirname, exists, isdir, join
-import os, sys, io, re, yaml, json
+from collections import defaultdict
+import os, sys, io, re, types, json
 
 try:
     import chardet
@@ -23,8 +24,22 @@ except ImportError:
         import api_v5, conf
 
 
-def print_result(data, file=sys.stdout):
-    yaml.safe_dump(data, file, default_flow_style=False)
+def tree_node(): return defaultdict(tree_node)
+
+def print_result(data, file=sys.stdout, indent='', indent_level=' '*2):
+    if isinstance(data, list):
+        for v in data:
+            print_result(v, file=file, indent=indent + '- ')
+    elif isinstance(data, dict):
+        for k, v in sorted(data.viewitems(), key=op.itemgetter(0)):
+            print(indent + decode_obj(k, force=True) + ':', file=file, end='')
+            if not isinstance(v, (list, dict)): # peek to display simple types inline
+                print_result(v, file=file, indent=' ')
+            else:
+                print(file=file)
+                print_result(v, file=file, indent=indent+indent_level)
+    else:
+        print(indent + decode_obj(data, force=True), file=file)
 
 
 def size_units(size,
@@ -40,15 +55,15 @@ def id_match( s,
     return s if _re_id.search(s) else None
 
 
-def decode_arg(arg):
-    'Convert cli argument to unicode.'
-    if isinstance(arg, unicode):
-        return arg
-    elif isinstance(arg, bytes):
-        return arg.decode(chardet.detect(arg)['encoding'])\
-            if chardet else arg.decode('utf-8')
+def decode_obj(obj, force=False):
+    'Convert object to unicode.'
+    if isinstance(obj, unicode):
+        return obj
+    elif isinstance(obj, bytes):
+        return obj.decode(chardet.detect(obj)['encoding'])\
+            if chardet else obj.decode('utf-8')
     else:
-        return arg
+        return obj if not dump else repr(obj)
 
 
 def main():
@@ -192,9 +207,9 @@ def main():
     # Make best-effort to decode all CLI options to unicode
     for k, v in vars(optz).viewitems():
         if isinstance(v, bytes):
-            setattr(optz, k, decode_arg(v))
+            setattr(optz, k, decode_obj(v))
         elif isinstance(v, list):
-            setattr(optz, k, map(decode_arg, v))
+            setattr(optz, k, map(decode_obj, v))
 
     if optz.call == 'auth':
         if not optz.url:
@@ -264,20 +279,12 @@ def main():
 
 
     elif optz.call == 'tree':
-        from yaml.dumper import SafeDumper
-
-        class Pairs(list):
-            @staticmethod
-            def yaml_representer(dumper, data):
-                return dumper.represent_mapping('tag:yaml.org,2002:map', data)
-
-        SafeDumper.add_representer(Pairs, Pairs.yaml_representer)
 
         def recurse(obj_id):
-            node = Pairs()
+            node = tree_node()
             for obj in api.listdir(obj_id):
-                node.append(( obj['name'], recurse(obj['id']) \
-                    if obj['type'] in ['folder', 'album'] else obj['type'] ))
+                node[obj['name']] = recurse(obj['id']) \
+                    if obj['type'] in ['folder', 'album'] else obj['type']
             return node
 
         root_id = resolve_path(optz.folder)
