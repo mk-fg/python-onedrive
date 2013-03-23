@@ -14,11 +14,14 @@ except IOError:
 setup(
 
     name='python-skydrive',
-    version='13.03.23',
+    version='13.03.24',
     author='Mike Kazantsev, Antonio Chen',
     author_email='mk.fraggod@gmail.com',
     license='WTFPL',
-    keywords='skydrive api oauth2 rest microsoft cloud live liveconnect',
+    keywords=[ 'skydrive', 'api', 'oauth2',
+        'rest', 'microsoft', 'cloud', 'live', 'liveconnect',
+        'json', 'storage', 'storage provider', 'file hosting' ],
+
     url='http://github.com/mk-fg/python-skydrive',
 
     description='Python and command-line interface'
