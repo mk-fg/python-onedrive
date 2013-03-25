@@ -43,7 +43,7 @@ class ConfigMixin(object):
             path = cls.conf_path_default
             log.debug('Using default state-file path: {}'.format(path))
         path = os.path.expanduser(path)
-        with open(path, 'r') as src:
+        with open(path) as src:
             portalocker.lock(src, portalocker.LOCK_SH)
             conf = yaml.load(src.read())
             portalocker.unlock(src)
@@ -111,15 +111,14 @@ class ConfigMixin(object):
                             retry = True
                         else:
                             # Atomic update
-                            try:
-                                os.rename(tmp.name, src.name)
-                            except WindowsError:
-                                # Non-atomic update for pids that already have fd to old file,
-                                #  but (presumably) are waiting for the write-lock to be released
-                                src.seek(0), tmp.seek(0)
-                                src.truncate()
-                                src.write(tmp.read())
-                                src.flush()
+                            try: os.rename(tmp.name, src.name)
+                            except WindowsError: pass
+                            # Non-atomic update for pids that already have fd to old file,
+                            #  but (presumably) are waiting for the write-lock to be released
+                            src.seek(0), tmp.seek(0)
+                            src.truncate()
+                            src.write(tmp.read())
+                            src.flush()
                     finally:
                         portalocker.unlock(tmp)
                         portalocker.unlock(src)
@@ -127,10 +126,7 @@ class ConfigMixin(object):
                             os.unlink(tmp.name)
                         except OSError:
                             pass
-                try:
-                    os.remove(tmp.name)
-                except Exception:
-                    pass
+
         if retry:
             log.debug(( 'Configuration file ({}) was changed'
                         ' during merge, restarting merge' ).format(self.conf_save))
