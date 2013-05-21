@@ -59,16 +59,23 @@ class SkyDriveHTTPClient(object):
         else:
             version = tuple(it.imap(int, requests.__version__.split('.')))
             if version > (1, 0, 0):
-                # No hacks necessary - session HTTPAdapter can be used!
+                # Less hacks necessary - session HTTPAdapter can be used
                 from requests.packages.urllib3.poolmanager import PoolManager
                 from requests.adapters import HTTPAdapter
                 import ssl
 
+                _default_block = object()
+
                 class TLSv1Adapter(HTTPAdapter):
-                    def init_poolmanager(self, connections, maxsize):
+                    def init_poolmanager(self, connections, maxsize, block=_default_block):
+                        pool_kw = dict()
+                        if block is _default_block:
+                            try: from requests.adapters import DEFAULT_POOLBLOCK # 1.2.1+
+                            except ImportError: pass
+                            else: pool_kw['block'] = DEFAULT_POOLBLOCK
                         self.poolmanager = PoolManager(
                             num_pools=connections, maxsize=maxsize,
-                            ssl_version=ssl.PROTOCOL_TLSv1)
+                            ssl_version=ssl.PROTOCOL_TLSv1, **pool_kw)
 
                 session = requests.Session()
                 session.mount('https://', TLSv1Adapter())
