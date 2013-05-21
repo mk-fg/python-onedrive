@@ -23,13 +23,13 @@ if os.name == 'nt':
         win32file.UnlockFileEx(hfile, 0, 0x7FFFFFFF, __overlapped)
 
 elif os.name == 'posix':
-    from fcntl import lockf, LOCK_EX, LOCK_SH, LOCK_NB
+    from fcntl import lockf, LOCK_EX, LOCK_SH, LOCK_NB, LOCK_UN
 
     def lock(file, flags):
         lockf(file, flags)
 
     def unlock(file):
-        lockf(file, fcntl.LOCK_UN)
+        lockf(file, LOCK_UN)
 
 else:
     raise RuntimeError("PortaLocker only defined for nt and posix platforms")
