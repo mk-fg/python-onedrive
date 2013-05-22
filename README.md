@@ -104,6 +104,10 @@ parent folder are used.
 Use "-p" or "-i" ("--path" / "--id") switches to control this explicitly.
 See LiveConnect docs or notes section below for more info on how these work.
 
+If you get HTTP error 400 right after or during "auth" command, read
+[this comment on #4](https://github.com/mk-fg/python-skydrive/issues/4#issuecomment-18233153)
+(maybe with some context).
+
 
 
 Module usage
