@@ -60,8 +60,11 @@ class SkyDriveHTTPClient(object):
                     sock = socket.create_connection((self.host, self.port),
                                                     self.timeout)
 
-                    self.sock = ssl.wrap_socket(sock, self.key_file,
-                                                self.cert_file, cert_reqs=self.cert_reqs, ca_certs=self.ca_certs,
+                    self.sock = ssl.wrap_socket(sock,
+                                                self.key_file,
+                                                self.cert_file,
+                                                cert_reqs=self.cert_reqs,
+                                                ca_certs=self.ca_certs,
                                                 ssl_version=ssl.PROTOCOL_TLSv1)
                     if self.ca_certs:
                         match_hostname(self.sock.getpeercert(), self.host)
@@ -79,11 +82,13 @@ class SkyDriveHTTPClient(object):
                 _default_block = object()
 
                 class TLSv1Adapter(HTTPAdapter):
-                    def init_poolmanager(self, connections, maxsize, block=_default_block):
+                    def init_poolmanager(self, connections, maxsize,
+                                         block=_default_block):
                         pool_kw = dict()
                         if block is _default_block:
                             try:
-                                from requests.adapters import DEFAULT_POOLBLOCK  # 1.2.1+
+                                # 1.2.1+
+                                from requests.adapters import DEFAULT_POOLBLOCK
                             except ImportError:
                                 pass
                             else:
@@ -101,12 +106,14 @@ class SkyDriveHTTPClient(object):
     def request(self, url, method='get', data=None,
                 files=None, raw=False, headers=dict(), raise_for=dict(),
                 session=None):
-        '''Make synchronous HTTP request.
-            Can be overidden to use different http module (e.g. urllib2, twisted, etc).'''
+        """Make synchronous HTTP request.
+           Can be overidden to use different http module
+           (e.g. urllib2, twisted, etc)."""
+
         import requests  # import here to avoid dependency on the module
 
         if not getattr(requests, '_skydrive_tls_fixed', False):
-            # temporary fix for https://github.com/mk-fg/python-skydrive/issues/1
+            # temp fix for https://github.com/mk-fg/python-skydrive/issues/1
             patched_session = self._requests_tls_workarounds(requests)
             if patched_session is not None:
                 self._requests_session = patched_session
@@ -121,7 +128,8 @@ class SkyDriveHTTPClient(object):
 
         method = method.lower()
         kwz, func = dict(), getattr(session, method,
-                                    ft.partial(session.request, method.upper()))
+                                    ft.partial(session.request, method.upper())
+                                    )
         if data is not None:
             if method == 'post':
                 kwz['data'] = data
@@ -148,9 +156,13 @@ class SkyDriveHTTPClient(object):
 
 
 class SkyDriveAuth(SkyDriveHTTPClient):
-    #: Client id/secret should be static on per-application basis.
-    #: Can be received from LiveConnect by any registered user at https://manage.dev.live.com/
-    #: API ToS can be found at http://msdn.microsoft.com/en-US/library/live/ff765012
+    # Client id/secret should be static on per-application basis.
+    # Can be received from LiveConnect by any registered user at
+    # https://manage.dev.live.com/
+
+    # API ToS can be found at
+    # http://msdn.microsoft.com/en-US/library/live/ff765012
+
     client_id = client_secret = None
 
     auth_url_user = 'https://login.live.com/oauth20_authorize.srf'
@@ -158,15 +170,16 @@ class SkyDriveAuth(SkyDriveHTTPClient):
     auth_scope = 'wl.skydrive', 'wl.skydrive_update', 'wl.offline_access'
     auth_redirect_uri_mobile = 'https://login.live.com/oauth20_desktop.srf'
 
-    #: Set by auth_get_token() method, not used internally.
-    #: Might be useful for debugging or extension purposes.
+    # Set by auth_get_token() method, not used internally.
+    # Might be useful for debugging or extension purposes.
     auth_access_expires = auth_access_data_raw = None
 
-    #: At least one of auth_code, auth_refresh_token or
-    #:  auth_access_token should be set before data requests.
+    # At least one of auth_code, auth_refresh_token or auth_access_token
+    # should be set before data requests.
     auth_code = auth_refresh_token = auth_access_token = None
 
-    #: This (default) redirect_uri is **special** - app must be marked as "mobile" to use it.
+    # This (default) redirect_uri is special -
+    # app must be marked as "mobile" to use it.
     auth_redirect_uri = auth_redirect_uri_mobile
 
     def __init__(self, **config):
@@ -175,12 +188,12 @@ class SkyDriveAuth(SkyDriveHTTPClient):
             try:
                 getattr(self, k)
             except AttributeError:
-                raise AttributeError('Unrecognized configuration key: {}'.format(k))
+                raise AttributeError('Unrecognized configuration key: {}'
+                                     .format(k))
             setattr(self, k, v)
 
     def auth_user_get_url(self, scope=None):
         'Build authorization URL for User Agent.'
-        # Note: default redirect_uri is **special**, app must be marked as "mobile" to use it
         if not self.client_id:
             raise AuthenticationError('No client_id specified')
         return '{}?{}'.format(self.auth_url_user, urllib.urlencode(dict(
@@ -205,22 +218,33 @@ class SkyDriveAuth(SkyDriveHTTPClient):
 
     def _auth_token_request(self):
         post_data = dict(client_id=self.client_id,
-                         client_secret=self.client_secret, redirect_uri=self.auth_redirect_uri)
+                         client_secret=self.client_secret,
+                         redirect_uri=self.auth_redirect_uri)
         if not self.auth_refresh_token:
-            log.debug('Requesting new access_token through authorization_code grant')
-            post_data.update(code=self.auth_code, grant_type='authorization_code')
+            log.debug(
+                'Requesting new access_token through authorization_code grant')
+
+            post_data.update(code=self.auth_code,
+                             grant_type='authorization_code')
+
         else:
             if self.auth_redirect_uri == self.auth_redirect_uri_mobile:
-                del post_data['client_secret']  # not necessary for "mobile" apps
+                # not necessary for "mobile" apps
+                del post_data['client_secret']
+
             log.debug('Refreshing access_token')
-            post_data.update(
-                refresh_token=self.auth_refresh_token, grant_type='refresh_token')
-        post_data_missing_keys = list(k for k in
-            ['client_id', 'client_secret', 'code', 'refresh_token', 'grant_type']
-            if k in post_data and not post_data[k])
+
+            post_data.update(refresh_token=self.auth_refresh_token,
+                             grant_type='refresh_token')
+
+        post_data_missing_keys = list(k for k in ['client_id', 'client_secret',
+                                                  'code', 'refresh_token',
+                                                  'grant_type']
+                                      if k in post_data and not post_data[k])
         if post_data_missing_keys:
             raise AuthenticationError('Insufficient authentication'
-                                      ' data provided (missing keys: {})'.format(post_data_missing_keys))
+                                      ' data provided (missing keys: {})'
+                                      .format(post_data_missing_keys))
 
         return self.request(self.auth_url_token, method='post', data=post_data)
 
@@ -236,23 +260,25 @@ class SkyDriveAuth(SkyDriveHTTPClient):
         if check_scope and set(self.auth_scope) != set(scope_granted):
             raise AuthenticationError(
                 "Granted scope ({}) doesn't match requested one ({})."
-                    .format(', '.join(scope_granted), ', '.join(self.auth_scope)))
+                .format(', '.join(scope_granted), ', '.join(self.auth_scope)))
         return scope_granted
 
 
 class SkyDriveAPIWrapper(SkyDriveAuth):
-    '''Less-biased SkyDrive API wrapper class.
+    """Less-biased SkyDrive API wrapper class.
         All calls made here return result of self.request() call directly,
-            so it can easily be made async (e.g. return twisted deferred object)
-            by overriding http request method in subclass.'''
+        so it can easily be made async (e.g. return twisted deferred object)
+        by overriding http request method in subclass."""
 
     api_url_base = 'https://apis.live.net/v5.0/'
 
     def _api_url(self, path, query=dict(),
                  pass_access_token=True, pass_empty_values=False):
         query = query.copy()
+
         if pass_access_token:
             query.setdefault('access_token', self.auth_access_token)
+
         if not pass_empty_values:
             for k, v in query.viewitems():
                 if not v:
@@ -260,14 +286,13 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
         return urlparse.urljoin(self.api_url_base,
                                 '{}?{}'.format(path, urllib.urlencode(query)))
 
-    def __call__(self, url='me/skydrive', query=dict(),
-                  query_filter=True, auth_header=False,
-                  auto_refresh_token=True, **request_kwz):
+    def __call__(self, url='me/skydrive', query=dict(), query_filter=True,
+                 auth_header=False, auto_refresh_token=True, **request_kwz):
         '''Make an arbitrary call to LiveConnect API.
             Shouldn't be used directly under most circumstances.'''
         if query_filter:
             query = dict((k, v) for k, v in
-                query.viewitems() if v is not None)
+                         query.viewitems() if v is not None)
         if auth_header:
             request_kwz.setdefault('headers', dict())['Authorization'] = 'Bearer {}'.format(self.auth_access_token)
         kwz = request_kwz.copy()
