@@ -1,10 +1,17 @@
 #-*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
-import itertools as it, operator as op, functools as ft
+import os
+import urllib
+import urlparse
+import json
+import types
+import itertools as it
+import operator as op
+import functools as ft
+
 from datetime import datetime, timedelta
 from os.path import join, basename
-import os, sys, urllib, urlparse, json, types
 
 from skydrive.conf import ConfigMixin
 
@@ -13,7 +20,8 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class SkyDriveInteractionError(Exception): pass
+class SkyDriveInteractionError(Exception):
+    pass
 
 
 class ProtocolError(SkyDriveInteractionError):
@@ -22,7 +30,8 @@ class ProtocolError(SkyDriveInteractionError):
         self.code = code
 
 
-class AuthenticationError(SkyDriveInteractionError): pass
+class AuthenticationError(SkyDriveInteractionError):
+    pass
 
 
 class DoesNotExists(SkyDriveInteractionError):
@@ -48,11 +57,14 @@ class SkyDriveHTTPClient(object):
 
             class VerifiedHTTPSConnection(cp.VerifiedHTTPSConnection):
                 def connect(self):
-                    sock = socket.create_connection((self.host, self.port), self.timeout)
+                    sock = socket.create_connection((self.host, self.port),
+                                                    self.timeout)
+
                     self.sock = ssl.wrap_socket(sock, self.key_file,
                                                 self.cert_file, cert_reqs=self.cert_reqs, ca_certs=self.ca_certs,
                                                 ssl_version=ssl.PROTOCOL_TLSv1)
-                    if self.ca_certs: match_hostname(self.sock.getpeercert(), self.host)
+                    if self.ca_certs:
+                        match_hostname(self.sock.getpeercert(), self.host)
 
             cp.VerifiedHTTPSConnection = VerifiedHTTPSConnection
 
@@ -70,9 +82,12 @@ class SkyDriveHTTPClient(object):
                     def init_poolmanager(self, connections, maxsize, block=_default_block):
                         pool_kw = dict()
                         if block is _default_block:
-                            try: from requests.adapters import DEFAULT_POOLBLOCK # 1.2.1+
-                            except ImportError: pass
-                            else: pool_kw['block'] = DEFAULT_POOLBLOCK
+                            try:
+                                from requests.adapters import DEFAULT_POOLBLOCK  # 1.2.1+
+                            except ImportError:
+                                pass
+                            else:
+                                pool_kw['block'] = DEFAULT_POOLBLOCK
                         self.poolmanager = PoolManager(
                             num_pools=connections, maxsize=maxsize,
                             ssl_version=ssl.PROTOCOL_TLSv1, **pool_kw)
@@ -83,12 +98,12 @@ class SkyDriveHTTPClient(object):
         requests._skydrive_tls_fixed = True
         return session
 
-    def request( self, url, method='get', data=None,
-                 files=None, raw=False, headers=dict(), raise_for=dict(),
-                 session=None ):
+    def request(self, url, method='get', data=None,
+                files=None, raw=False, headers=dict(), raise_for=dict(),
+                session=None):
         '''Make synchronous HTTP request.
             Can be overidden to use different http module (e.g. urllib2, twisted, etc).'''
-        import requests # import here to avoid dependency on the module
+        import requests  # import here to avoid dependency on the module
 
         if not getattr(requests, '_skydrive_tls_fixed', False):
             # temporary fix for https://github.com/mk-fg/python-skydrive/issues/1
@@ -114,15 +129,19 @@ class SkyDriveHTTPClient(object):
                 kwz['data'] = json.dumps(data)
                 headers = headers.copy()
                 headers.setdefault('Content-Type', 'application/json')
-        if files is not None: kwz['files'] = files
-        if headers is not None: kwz['headers'] = headers
+        if files is not None:
+            kwz['files'] = files
+        if headers is not None:
+            kwz['headers'] = headers
         code = None
         try:
             res = func(url, **kwz)
             # log.debug('Response headers: {}'.format(res.headers))
             code = res.status_code
-            if code == requests.codes.no_content: return
-            if code != requests.codes.ok: res.raise_for_status()
+            if code == requests.codes.no_content:
+                return
+            if code != requests.codes.ok:
+                res.raise_for_status()
             return json.loads(res.text) if not raw else res.content
         except requests.RequestException as err:
             raise raise_for.get(code, ProtocolError)(code, err.message)
@@ -150,7 +169,6 @@ class SkyDriveAuth(SkyDriveHTTPClient):
     #: This (default) redirect_uri is **special** - app must be marked as "mobile" to use it.
     auth_redirect_uri = auth_redirect_uri_mobile
 
-
     def __init__(self, **config):
         'Initialize API wrapper class with specified properties set.'
         for k, v in config.viewitems():
@@ -160,11 +178,11 @@ class SkyDriveAuth(SkyDriveHTTPClient):
                 raise AttributeError('Unrecognized configuration key: {}'.format(k))
             setattr(self, k, v)
 
-
     def auth_user_get_url(self, scope=None):
         'Build authorization URL for User Agent.'
         # Note: default redirect_uri is **special**, app must be marked as "mobile" to use it
-        if not self.client_id: raise AuthenticationError('No client_id specified')
+        if not self.client_id:
+            raise AuthenticationError('No client_id specified')
         return '{}?{}'.format(self.auth_url_user, urllib.urlencode(dict(
             client_id=self.client_id, scope=' '.join(scope or self.auth_scope),
             response_type='code', redirect_uri=self.auth_redirect_uri)))
@@ -180,7 +198,6 @@ class SkyDriveAuth(SkyDriveHTTPClient):
         self.auth_code = url_qs['code']
         return self.auth_code
 
-
     def auth_get_token(self, check_scope=True):
         'Refresh or acquire access_token.'
         res = self.auth_access_data_raw = self._auth_token_request()
@@ -194,7 +211,7 @@ class SkyDriveAuth(SkyDriveHTTPClient):
             post_data.update(code=self.auth_code, grant_type='authorization_code')
         else:
             if self.auth_redirect_uri == self.auth_redirect_uri_mobile:
-                del post_data['client_secret'] # not necessary for "mobile" apps
+                del post_data['client_secret']  # not necessary for "mobile" apps
             log.debug('Refreshing access_token')
             post_data.update(
                 refresh_token=self.auth_refresh_token, grant_type='refresh_token')
@@ -210,14 +227,15 @@ class SkyDriveAuth(SkyDriveHTTPClient):
     def _auth_token_process(self, res, check_scope=True):
         assert res['token_type'] == 'bearer'
         for k in 'access_token', 'refresh_token':
-            if k in res: setattr(self, 'auth_{}'.format(k), res[k])
+            if k in res:
+                setattr(self, 'auth_{}'.format(k), res[k])
         self.auth_access_expires = None if 'expires_in' not in res \
             else (datetime.utcnow() + timedelta(0, res['expires_in']))
 
         scope_granted = res.get('scope', '').split()
         if check_scope and set(self.auth_scope) != set(scope_granted):
             raise AuthenticationError(
-                "Granted scope ({}) doesn't match requested one ({})." \
+                "Granted scope ({}) doesn't match requested one ({})."
                     .format(', '.join(scope_granted), ', '.join(self.auth_scope)))
         return scope_granted
 
@@ -230,8 +248,8 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
 
     api_url_base = 'https://apis.live.net/v5.0/'
 
-    def _api_url( self, path, query=dict(),
-                  pass_access_token=True, pass_empty_values=False ):
+    def _api_url(self, path, query=dict(),
+                 pass_access_token=True, pass_empty_values=False):
         query = query.copy()
         if pass_access_token:
             query.setdefault('access_token', self.auth_access_token)
@@ -242,17 +260,16 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
         return urlparse.urljoin(self.api_url_base,
                                 '{}?{}'.format(path, urllib.urlencode(query)))
 
-    def __call__( self, url='me/skydrive', query=dict(),
+    def __call__(self, url='me/skydrive', query=dict(),
                   query_filter=True, auth_header=False,
-                  auto_refresh_token=True, **request_kwz ):
+                  auto_refresh_token=True, **request_kwz):
         '''Make an arbitrary call to LiveConnect API.
             Shouldn't be used directly under most circumstances.'''
         if query_filter:
             query = dict((k, v) for k, v in
                 query.viewitems() if v is not None)
         if auth_header:
-            request_kwz.setdefault('headers', dict()) \
-                ['Authorization'] = 'Bearer {}'.format(self.auth_access_token)
+            request_kwz.setdefault('headers', dict())['Authorization'] = 'Bearer {}'.format(self.auth_access_token)
         kwz = request_kwz.copy()
         kwz.setdefault('raise_for', dict())[401] = AuthenticationError
         api_url = ft.partial(self._api_url,
@@ -260,13 +277,13 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
         try:
             return self.request(api_url(), **kwz)
         except AuthenticationError:
-            if not auto_refresh_token: raise
+            if not auto_refresh_token:
+                raise
             self.auth_get_token()
-            if auth_header: # update auth header with a new token
+            if auth_header:  # update auth header with a new token
                 request_kwz['headers']['Authorization'] \
                     = 'Bearer {}'.format(self.auth_access_token)
             return self.request(api_url(), **request_kwz)
-
 
     def get_quota(self):
         'Get SkyDrive object, representing quota.'
@@ -281,7 +298,6 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
             See http://msdn.microsoft.com/en-us/library/live/hh243648.aspx
                 for the list and description of metadata keys for each object type.'''
         return self(obj_id)
-
 
     def get(self, obj_id, byte_range=None):
         '''Download and return an file (object) or a specified byte_range from it.
@@ -304,7 +320,7 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
             if overwrite is False:
                 overwrite = 'false'
             elif overwrite in ('true', True):
-                overwrite = None # don't pass it
+                overwrite = None  # don't pass it
             elif overwrite != 'ChooseNewName':
                 raise ValueError('overwrite parameter'
                                  ' must be True, False or "ChooseNewName".')
@@ -327,7 +343,6 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
         'Delete specified object.'
         return self(obj_id, method='delete')
 
-
     def info_update(self, obj_id, data):
         '''Update metadata with of a specified object.
             See http://msdn.microsoft.com/en-us/library/live/hh243648.aspx
@@ -341,7 +356,6 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
         assert link_type in ['embed', 'shared_read_link', 'shared_edit_link']
         return self(join(obj_id, link_type), method='get')
 
-
     def copy(self, obj_id, folder_id, move=False):
         '''Copy specified file (object) to a folder with a given ID.
             Well-known folder names (like "me/skydrive") don't seem to work here.
@@ -354,7 +368,6 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
         '''Move specified file (object) to a folder.
             Note that folders cannot be moved, this is API limitation.'''
         return self.copy(obj_id, folder_id, move=True)
-
 
     def comments(self, obj_id):
         'Get SkyDrive object, representing a list of comments for an object.'
@@ -375,8 +388,8 @@ class SkyDriveAPI(SkyDriveAPIWrapper):
     '''Biased synchronous SkyDrive API interface.
         Adds some derivative convenience methods over SkyDriveAPIWrapper.'''
 
-    def resolve_path( self, path,
-                      root_id='me/skydrive', objects=False ):
+    def resolve_path(self, path,
+                     root_id='me/skydrive', objects=False):
         '''Return id (or metadata) of an object, specified by chain
                 (iterable or fs-style path string) of "name" attributes of it's ancestors,
                 or raises DoesNotExists error.
@@ -395,14 +408,14 @@ class SkyDriveAPI(SkyDriveAPIWrapper):
                         root_id = dict(it.imap(
                             op.itemgetter('name', 'id'), self.listdir(root_id)))[name]
                 except (KeyError, ProtocolError) as err:
-                    if isinstance(err, ProtocolError) and err.code != 404: raise
+                    if isinstance(err, ProtocolError) and err.code != 404:
+                        raise
                     raise DoesNotExists(root_id, path[i:])
         return root_id if not objects else self.info(root_id)
 
     def get_quota(self):
         'Return tuple of (bytes_available, bytes_quota).'
-        return op.itemgetter('available', 'quota') \
-                (super(SkyDriveAPI, self).get_quota())
+        return op.itemgetter('available', 'quota')(super(SkyDriveAPI, self).get_quota())
 
     def listdir(self, folder_id='me/skydrive', type_filter=None, limit=None):
         '''Return a list of objects in the specified folder_id.
@@ -411,7 +424,8 @@ class SkyDriveAPI(SkyDriveAPIWrapper):
                 of object types to return, post-api-call processing.'''
         lst = super(SkyDriveAPI, self).listdir(folder_id=folder_id, limit=limit)['data']
         if type_filter:
-            if isinstance(type_filter, types.StringTypes): type_filter = {type_filter}
+            if isinstance(type_filter, types.StringTypes):
+                type_filter = {type_filter}
             lst = list(obj for obj in lst if obj['type'] in type_filter)
         return lst
 
@@ -439,4 +453,5 @@ class PersistentSkyDriveAPI(SkyDriveAPI, ConfigMixin):
         self.sync()
         return ret
 
-    def __del__(self): self.sync()
+    def __del__(self):
+        self.sync()
