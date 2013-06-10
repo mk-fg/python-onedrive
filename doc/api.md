@@ -71,8 +71,8 @@
 
     * auth\_redirect\_uri = 'https://login.live.com/oauth20_desktop.srf'
 
-        This (default) redirect_uri is **special** - app must be marked
-        as "mobile" to use it.
+        This (default) redirect_uri is special - app must be marked as
+        "mobile" to use it.
 
 
     * \_\_init\_\_(\*\*config)
@@ -136,18 +136,19 @@
 
     * get(obj\_id, byte\_range=None)
 
-        Download and return an file (object) or a specified byte_range
-        from it.
+        Download and return a file object or a specified byte_range from
+        it.
 
         See HTTP Range header (rfc2616) for possible byte_range formats,
-        some examples: "0-499" - byte offsets 0-499 (inclusive), "-500"
-        \- final 500 bytes.
+
+        Examples: "0-499" - byte offsets 0-499 (inclusive), "-500" -
+        final 500 bytes.
 
 
     * put(path\_or\_tuple, folder\_id='me/skydrive', overwrite=True)
 
         Upload a file (object), possibly overwriting (default behavior)
-        a file with the same "name" attribute, if exists.
+        a file with the same "name" attribute, if it exists.
 
         First argument can be either path to a local file or tuple of
         "(name, file)", where "file" can be either a file-like object or
@@ -163,10 +164,8 @@
 
         Create a folder with a specified "name" attribute.
 
-        folder_id allows to specify a parent folder.
-
-        metadata mapping may contain additional folder properties to
-        pass to an API.
+        folder_id allows to specify a parent folder. metadata mapping
+        may contain additional folder properties to pass to an API.
 
 
     * delete(obj\_id)
@@ -184,11 +183,9 @@
 
     * link(obj\_id, link\_type='shared\_read\_link')
 
-        Return a preauthenticated (useable by anyone) link to a
-        specified object.
-
-        Object will be considered "shared" by SkyDrive, even if link is
-        never actually used.
+        Return a preauthenticated (usable by anyone) link to a specified
+        object. Object will be considered "shared" by SkyDrive, even if
+        link is never actually used.
 
         link_type can be either "embed" (returns html),
         "shared_read_link" or "shared_edit_link".
@@ -201,7 +198,7 @@
         Well-known folder names (like "me/skydrive") don't seem to work
         here.
 
-        Folders cannot be copied, this is API limitation.
+        Folders cannot be copied; this is an API limitation.
 
 
     * move(obj\_id, folder\_id)
@@ -241,13 +238,11 @@
     * resolve\_path(path, root\_id='me/skydrive', objects=False)
 
         Return id (or metadata) of an object, specified by chain
-        (iterable or fs-style path string) of "name" attributes of it's
+        (iterable or fs-style path string) of "name" attributes of its
         ancestors, or raises DoesNotExists error.
 
-        Requires a lot of calls to resolve each name in path, so use
-        with care.
-
-        root_id parameter allows to specify path relative to some
+        Requires many calls to resolve each name in path, so use with
+        care. root_id parameter allows to specify path relative to some
         folder_id (default: me/skydrive).
 
 
