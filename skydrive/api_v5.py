@@ -156,12 +156,12 @@ class SkyDriveHTTPClient(object):
 
 
 class SkyDriveAuth(SkyDriveHTTPClient):
-    # Client id/secret should be static on per-application basis.
-    # Can be received from LiveConnect by any registered user at
-    # https://manage.dev.live.com/
+    #: Client id/secret should be static on per-application basis.
+    #: Can be received from LiveConnect by any registered user at
+    #: https://manage.dev.live.com/
 
-    # API ToS can be found at
-    # http://msdn.microsoft.com/en-US/library/live/ff765012
+    #: API ToS can be found at
+    #: http://msdn.microsoft.com/en-US/library/live/ff765012
 
     client_id = client_secret = None
 
@@ -170,16 +170,16 @@ class SkyDriveAuth(SkyDriveHTTPClient):
     auth_scope = 'wl.skydrive', 'wl.skydrive_update', 'wl.offline_access'
     auth_redirect_uri_mobile = 'https://login.live.com/oauth20_desktop.srf'
 
-    # Set by auth_get_token() method, not used internally.
-    # Might be useful for debugging or extension purposes.
+    #: Set by auth_get_token() method, not used internally.
+    #: Might be useful for debugging or extension purposes.
     auth_access_expires = auth_access_data_raw = None
 
-    # At least one of auth_code, auth_refresh_token or auth_access_token
-    # should be set before data requests.
+    #: At least one of auth_code, auth_refresh_token or auth_access_token
+    #: should be set before data requests.
     auth_code = auth_refresh_token = auth_access_token = None
 
-    # This (default) redirect_uri is special -
-    # app must be marked as "mobile" to use it.
+    #: This (default) redirect_uri is special -
+    #: app must be marked as "mobile" to use it.
     auth_redirect_uri = auth_redirect_uri_mobile
 
     def __init__(self, **config):
