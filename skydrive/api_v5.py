@@ -11,7 +11,7 @@ import operator as op
 import functools as ft
 
 from datetime import datetime, timedelta
-from os.path import join, basename
+from posixpath import join, basename
 
 from skydrive.conf import ConfigMixin
 
