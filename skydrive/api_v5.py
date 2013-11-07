@@ -138,6 +138,10 @@ class SkyDriveHTTPClient(object):
                 headers = headers.copy()
                 headers.setdefault('Content-Type', 'application/json')
         if files is not None:
+            # requests-2+ doesn't seem to add default content-type header
+            for k, file_tuple in files.iteritems():
+                if len(file_tuple) == 2:
+                    files[k] = tuple(file_tuple) + ('application/octet-stream',)
             kwz['files'] = files
         if headers is not None:
             kwz['headers'] = headers
