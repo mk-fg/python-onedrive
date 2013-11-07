@@ -156,7 +156,11 @@ class SkyDriveHTTPClient(object):
                 res.raise_for_status()
             return json.loads(res.text) if not raw else res.content
         except requests.RequestException as err:
-            raise raise_for.get(code, ProtocolError)(code, err.message)
+            try:
+                message = res.json()['error']
+            except (ValueError, KeyError):
+                message = err.message
+            raise raise_for.get(code, ProtocolError)(code, message)
 
 
 class SkyDriveAuth(SkyDriveHTTPClient):
