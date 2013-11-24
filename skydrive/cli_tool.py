@@ -32,7 +32,9 @@ def print_result(data, file, indent='', indent_first=None, indent_level=' '*2):
     # Custom printer is used because pyyaml isn't very pretty with unicode
     if isinstance(data, list):
         for v in data:
-            print_result(v, file=file, indent=indent + '  ', indent_first=indent + '- ')
+            print_result(v, file=file, indent=indent + '  ',
+                indent_first=(indent_first if indent_first is not None else indent) + '- ')
+            indent_first = None
     elif isinstance(data, dict):
         indent_cur = indent_first if indent_first is not None else indent
         for k, v in sorted(data.viewitems(), key=op.itemgetter(0)):
