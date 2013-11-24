@@ -28,19 +28,23 @@ force_encoding = None
 
 def tree_node(): return defaultdict(tree_node)
 
-def print_result(data, file, indent='', indent_level=' '*2):
+def print_result(data, file, indent='', indent_first=None, indent_level=' '*2):
+    # Custom printer is used because pyyaml isn't very pretty with unicode
     if isinstance(data, list):
         for v in data:
-            print_result(v, file=file, indent=indent + '- ')
+            print_result(v, file=file, indent=indent + '  ', indent_first=indent + '- ')
     elif isinstance(data, dict):
+        indent_cur = indent_first if indent_first is not None else indent
         for k, v in sorted(data.viewitems(), key=op.itemgetter(0)):
-            print(indent + decode_obj(k, force=True) + ':', file=file, end='')
+            print(indent_cur + decode_obj(k, force=True) + ':', file=file, end='')
+            indent_cur = indent
             if not isinstance(v, (list, dict)): # peek to display simple types inline
                 print_result(v, file=file, indent=' ')
             else:
                 print('', file=file)
-                print_result(v, file=file, indent=indent+indent_level)
+                print_result(v, file=file, indent=indent_cur+indent_level)
     else:
+        if indent_first is not None: indent = indent_first
         print(indent + decode_obj(data, force=True), file=file)
 
 def decode_obj(obj, force=False):
@@ -313,7 +317,9 @@ def main():
         def recurse(obj_id):
             node = tree_node()
             for obj in api.listdir(obj_id):
-                res = obj['type'] if not optz.objects else obj
+                # Make sure to dump files as lists with -o,
+                #  not dicts, to make them distinguishable from dirs
+                res = obj['type'] if not optz.objects else [obj['type'], obj]
                 node[obj['name']] = recurse(obj['id']) \
                     if obj['type'] in ['folder', 'album'] else res
             return node
