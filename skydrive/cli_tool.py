@@ -134,11 +134,11 @@ def main():
                           ' (default: %(default)s): shared_read_link, embed, shared_edit_link.')
 
     cmd = add_command('ls', help='List folder contents.')
-    cmd.add_argument('-o', '--objects', action='store_true',
-                     help='Dump full objects, not just name and id.')
     cmd.add_argument('folder',
                      nargs='?', default='me/skydrive',
                      help='Folder to list contents of (default: %(default)s).')
+    cmd.add_argument('-o', '--objects', action='store_true',
+                     help='Dump full objects, not just name and id.')
 
     cmd = add_command('mkdir', help='Create a folder.')
     cmd.add_argument('name',
@@ -201,6 +201,8 @@ def main():
     cmd.add_argument('folder',
                      nargs='?', default='me/skydrive',
                      help='Folder to display contents of (default: %(default)s).')
+    cmd.add_argument('-o', '--objects', action='store_true',
+                     help='Dump full objects, not just name and type.')
 
     optz = parser.parse_args()
 
@@ -311,8 +313,9 @@ def main():
         def recurse(obj_id):
             node = tree_node()
             for obj in api.listdir(obj_id):
+                res = obj['type'] if not optz.objects else obj
                 node[obj['name']] = recurse(obj['id']) \
-                    if obj['type'] in ['folder', 'album'] else obj['type']
+                    if obj['type'] in ['folder', 'album'] else res
             return node
 
         root_id = resolve_path(optz.folder)
