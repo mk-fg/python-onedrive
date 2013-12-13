@@ -145,7 +145,7 @@ class SkyDriveHTTPClient(object):
             kwz['files'] = files
         if headers is not None:
             kwz['headers'] = headers
-        code = None
+        code = res = None
         try:
             res = func(url, **kwz)
             # log.debug('Response headers: {}'.format(res.headers))
@@ -157,6 +157,8 @@ class SkyDriveHTTPClient(object):
             return json.loads(res.text) if not raw else res.content
         except requests.RequestException as err:
             try:
+                if res is None:
+                    raise ValueError
                 message = res.json()['error']
             except (ValueError, KeyError):
                 message = err.message
