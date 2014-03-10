@@ -192,6 +192,9 @@ class SkyDriveAuth(SkyDriveHTTPClient):
     #: app must be marked as "mobile" to use it.
     auth_redirect_uri = auth_redirect_uri_mobile
 
+    #: auth_callback is called when the token is refreshed
+    auth_callback = None
+
     def __init__(self, **config):
         """Initialize API wrapper class with specified properties set."""
         for k, v in config.viewitems():
@@ -271,6 +274,11 @@ class SkyDriveAuth(SkyDriveHTTPClient):
             raise AuthenticationError(
                 "Granted scope ({}) doesn't match requested one ({})."
                 .format(', '.join(scope_granted), ', '.join(self.auth_scope)))
+        if self.auth_callback:
+            self.auth_callback({
+                    'access_token': self.auth_access_token,
+                    'refresh_token': self.auth_refresh_token,
+                    })
         return scope_granted
 
 
