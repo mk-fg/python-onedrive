@@ -43,7 +43,12 @@ class SkyDriveHTTPClient(object):
         # Workaround for TLSv1.2 issue with Microsoft livefilestore.com hosts.
         session = None
 
-        if requests.__version__ in ['0.14.1', '0.14.2']:
+        try:
+            from requests.packages.urllib3 import connectionpool as cp
+        except ImportError:
+            cp = None
+
+        if cp and requests.__version__ in ['0.14.1', '0.14.2']:
             # These versions can only be monkey-patched, unfortunately.
             # See README and following related links for details:
             #  https://github.com/mk-fg/python-skydrive/issues/1
@@ -51,7 +56,6 @@ class SkyDriveHTTPClient(object):
             #  https://github.com/kennethreitz/requests/pull/900
             #  https://github.com/kennethreitz/requests/issues/1083
             #  https://github.com/shazow/urllib3/pull/109
-            from requests.packages.urllib3 import connectionpool as cp
 
             socket, ssl, match_hostname = cp.socket, cp.ssl, cp.match_hostname
 
