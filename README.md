@@ -20,7 +20,7 @@ Command-line usage
 ----------------------------------------
 
 SkyDrive API requires to register an application in
-[DevCenter](https://manage.dev.live.com/), providing you with client_id and
+[DevCenter](https://dev.live.com/), providing you with client_id and
 client_secret strings, used for authentication.
 
 I can't provide some static ones because according to LiveConnect ToS "You are
@@ -243,14 +243,13 @@ Issue pointing to the inconsistency.
 It's quite a conventional REST API with JSON encoding of structured data, like
 pretty much every other trendy modern API, say, github.
 
-Authentication is ["OAuth
-2.0"](http://msdn.microsoft.com/en-us/library/live/hh243647.aspx), which is
-quite ambigous all by itself, and especially when being implemented by
+Authentication is ["OAuth 2.0"](http://msdn.microsoft.com/en-us/library/live/hh243647.aspx),
+which is quite ambigous all by itself, and especially when being implemented by
 well-known for it's proprietary "cripple-everything-else" extension creep
 Microsoft.
 It has a twist in authrization_code grant flow for "mobile" apps, where bearer
 token refresh can be performed without having to provide client_secret. Client
-app must be marked as "mobile" in [DevCenter](https://manage.dev.live.com/) for
+app must be marked as "mobile" in [DevCenter](https://dev.live.com/) for
 that to work.
 There's also totally LiveConnect-specific "Sign-In" auth flow.
 Access tokens for SkyDrive scopes (plus wl.offline) seem to be issued with ttl
