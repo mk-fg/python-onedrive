@@ -150,6 +150,8 @@ class SkyDriveHTTPClient(object):
             for k, file_tuple in files.iteritems():
                 if len(file_tuple) == 2:
                     files[k] = tuple(file_tuple) + ('application/octet-stream',)
+                # rewind is necessary because request can be repeated due to auth failure
+                file_tuple[1].seek(0)
             kwz['files'] = files
         if headers is not None:
             kwz['headers'] = headers
