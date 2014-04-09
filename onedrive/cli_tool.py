@@ -13,13 +13,13 @@ except ImportError: # optional
     chardet = None
 
 try:
-    from skydrive import api_v5, conf
+    from onedrive import api_v5, conf
 except ImportError:
     # Make sure it works from a checkout
-    if isdir(join(dirname(__file__), 'skydrive')) \
+    if isdir(join(dirname(__file__), 'onedrive')) \
         and exists(join(dirname(__file__), 'setup.py')):
         sys.path.insert(0, dirname(__file__))
-        from skydrive import api_v5, conf
+        from onedrive import api_v5, conf
     else:
         import api_v5, conf
 
@@ -82,7 +82,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Tool to manipulate SkyDrive contents.')
+        description='Tool to manipulate OneDrive contents.')
     parser.add_argument('-c', '--config',
                         metavar='path', default=conf.ConfigMixin.conf_path_default,
                         help='Writable configuration state-file (yaml).'
@@ -200,7 +200,7 @@ def main():
                           ' action to get comment ids along with the messages).')
 
     cmd = add_command('tree',
-                      help='Show contents of skydrive (or folder) as a tree of file/folder names.'
+                      help='Show contents of onedrive (or folder) as a tree of file/folder names.'
                            ' Note that this operation will have to (separately) request a listing'
                            ' of every folder under the specified one, so can be quite slow for large'
                            ' number of these.')
@@ -229,7 +229,7 @@ def main():
     logging.basicConfig(level=logging.WARNING
     if not optz.debug else logging.DEBUG)
 
-    api = api_v5.PersistentSkyDriveAPI.from_conf(optz.config)
+    api = api_v5.PersistentOneDriveAPI.from_conf(optz.config)
     res = xres = None
     resolve_path_wrap = lambda s: api.resolve_path(s and s.replace('\\', '/').strip('/'))
     resolve_path = ( (lambda s: id_match(s) or resolve_path_wrap(s)) \

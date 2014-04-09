@@ -36,7 +36,7 @@ class ConfigMixin(object):
     def from_conf(cls, path=None, **overrides):
         '''Initialize instance from YAML configuration file,
             writing updates (only to keys, specified by "conf_update_keys") back to it.'''
-        from skydrive import portalocker
+        from onedrive import portalocker
         import yaml
 
         if path is None:
@@ -69,7 +69,7 @@ class ConfigMixin(object):
 
     def sync(self):
         if not self.conf_save: return
-        from skydrive import portalocker
+        from onedrive import portalocker
         import yaml
 
         retry = False

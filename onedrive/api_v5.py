@@ -13,32 +13,32 @@ import functools as ft
 from datetime import datetime, timedelta
 from posixpath import join, basename
 
-from skydrive.conf import ConfigMixin
+from onedrive.conf import ConfigMixin
 
 import logging
 
 log = logging.getLogger(__name__)
 
 
-class SkyDriveInteractionError(Exception):
+class OneDriveInteractionError(Exception):
     pass
 
 
-class ProtocolError(SkyDriveInteractionError):
+class ProtocolError(OneDriveInteractionError):
     def __init__(self, code, msg):
         super(ProtocolError, self).__init__(code, msg)
         self.code = code
 
 
-class AuthenticationError(SkyDriveInteractionError):
+class AuthenticationError(OneDriveInteractionError):
     pass
 
 
-class DoesNotExists(SkyDriveInteractionError):
-    """Only raised from SkyDriveAPI.resolve_path()."""
+class DoesNotExists(OneDriveInteractionError):
+    """Only raised from OneDriveAPI.resolve_path()."""
 
 
-class SkyDriveHTTPClient(object):
+class OneDriveHTTPClient(object):
     def _requests_tls_workarounds(self, requests):
         # Workaround for TLSv1.2 issue with Microsoft livefilestore.com hosts.
         session = None
@@ -46,7 +46,7 @@ class SkyDriveHTTPClient(object):
         if requests.__version__ in ['0.14.1', '0.14.2']:
             # These versions can only be monkey-patched, unfortunately.
             # See README and following related links for details:
-            #  https://github.com/mk-fg/python-skydrive/issues/1
+            #  https://github.com/mk-fg/python-onedrive/issues/1
             #  https://github.com/kennethreitz/requests/pull/799
             #  https://github.com/kennethreitz/requests/pull/900
             #  https://github.com/kennethreitz/requests/issues/1083
@@ -108,7 +108,7 @@ class SkyDriveHTTPClient(object):
                 session = requests.Session()
                 session.mount('https://', TLSv1Adapter())
 
-        requests._skydrive_tls_fixed = True
+        requests._onedrive_tls_fixed = True
         return session
 
     def request(self, url, method='get', data=None,
@@ -120,8 +120,8 @@ class SkyDriveHTTPClient(object):
 
         import requests  # import here to avoid dependency on the module
 
-        if not getattr(requests, '_skydrive_tls_fixed', False):
-            # temp fix for https://github.com/mk-fg/python-skydrive/issues/1
+        if not getattr(requests, '_onedrive_tls_fixed', False):
+            # temp fix for https://github.com/mk-fg/python-onedrive/issues/1
             patched_session = self._requests_tls_workarounds(requests)
             if patched_session is not None:
                 self._requests_session = patched_session
@@ -175,7 +175,7 @@ class SkyDriveHTTPClient(object):
             raise raise_for.get(code, ProtocolError)(code, message)
 
 
-class SkyDriveAuth(SkyDriveHTTPClient):
+class OneDriveAuth(OneDriveHTTPClient):
     #: Client id/secret should be static on per-application basis.
     #: Can be received from LiveConnect by any registered user at
     #: https://manage.dev.live.com/
@@ -284,8 +284,8 @@ class SkyDriveAuth(SkyDriveHTTPClient):
         return scope_granted
 
 
-class SkyDriveAPIWrapper(SkyDriveAuth):
-    """Less-biased SkyDrive API wrapper class.
+class OneDriveAPIWrapper(OneDriveAuth):
+    """Less-biased OneDrive API wrapper class.
         All calls made here return result of self.request() call directly,
         so it can easily be made async (e.g. return twisted deferred object)
         by overriding http request method in subclass."""
@@ -337,11 +337,11 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
             return self.request(api_url(), **request_kwz)
 
     def get_quota(self):
-        """Get SkyDrive object, representing quota."""
+        """Get OneDrive object, representing quota."""
         return self('me/skydrive/quota')
 
     def listdir(self, folder_id='me/skydrive', limit=None):
-        """Get SkyDrive object, representing list of objects in a folder."""
+        """Get OneDrive object, representing list of objects in a folder."""
         return self(join(folder_id, 'files'), dict(limit=limit))
 
     def info(self, obj_id='me/skydrive'):
@@ -371,7 +371,7 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
              or just a string of bytes.
 
             overwrite option can be set to False to allow two identically-named
-             files or "ChooseNewName" to let SkyDrive derive some similar
+             files or "ChooseNewName" to let OneDrive derive some similar
              unique name. Behavior of this option mimics underlying API."""
 
         if overwrite is not None:
@@ -410,7 +410,7 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
 
     def link(self, obj_id, link_type='shared_read_link'):
         """Return a preauthenticated (usable by anyone) link to a
-            specified object. Object will be considered "shared" by SkyDrive,
+            specified object. Object will be considered "shared" by OneDrive,
             even if link is never actually used.
 
            link_type can be either "embed" (returns html), "shared_read_link"
@@ -435,7 +435,7 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
         return self.copy(obj_id, folder_id, move=True)
 
     def comments(self, obj_id):
-        """Get SkyDrive object, representing a list of comments
+        """Get OneDrive object, representing a list of comments
             for an object."""
         return self(join(obj_id, 'comments'))
 
@@ -450,9 +450,9 @@ class SkyDriveAPIWrapper(SkyDriveAuth):
         return self(comment_id, method='delete')
 
 
-class SkyDriveAPI(SkyDriveAPIWrapper):
-    """Biased synchronous SkyDrive API interface.
-        Adds some derivative convenience methods over SkyDriveAPIWrapper."""
+class OneDriveAPI(OneDriveAPIWrapper):
+    """Biased synchronous OneDrive API interface.
+        Adds some derivative convenience methods over OneDriveAPIWrapper."""
 
     def resolve_path(self, path,
                      root_id='me/skydrive', objects=False):
@@ -483,14 +483,14 @@ class SkyDriveAPI(SkyDriveAPIWrapper):
     def get_quota(self):
         """Return tuple of (bytes_available, bytes_quota)."""
         return (op.itemgetter('available', 'quota')(
-                super(SkyDriveAPI, self).get_quota()))
+                super(OneDriveAPI, self).get_quota()))
 
     def listdir(self, folder_id='me/skydrive', type_filter=None, limit=None):
         """Return a list of objects in the specified folder_id.
             limit is passed to the API, so might be used as optimization.
             type_filter can be set to type (str) or sequence
             of object types to return, post-api-call processing."""
-        lst = super(SkyDriveAPI, self).listdir(folder_id=folder_id,
+        lst = super(OneDriveAPI, self).listdir(folder_id=folder_id,
                                                limit=limit)['data']
         if type_filter:
             if isinstance(type_filter, types.StringTypes):
@@ -506,20 +506,20 @@ class SkyDriveAPI(SkyDriveAPIWrapper):
                 "Special folder names (like 'me/skydrive') don't"
                 " seem to work with copy/move operations, resolving it to id")
             folder_id = self.info(folder_id)['id']
-        return super(SkyDriveAPI, self).copy(obj_id, folder_id, move=move)
+        return super(OneDriveAPI, self).copy(obj_id, folder_id, move=move)
 
     def comments(self, obj_id):
         """Get a list of comments (message + metadata) for an object."""
-        return super(SkyDriveAPI, self).comments(obj_id)['data']
+        return super(OneDriveAPI, self).comments(obj_id)['data']
 
 
-class PersistentSkyDriveAPI(SkyDriveAPI, ConfigMixin):
+class PersistentOneDriveAPI(OneDriveAPI, ConfigMixin):
     conf_raise_structure_errors = True
 
-    @ft.wraps(SkyDriveAPI.auth_get_token)
+    @ft.wraps(OneDriveAPI.auth_get_token)
     def auth_get_token(self, *argz, **kwz):
         # Wrapped to push new tokens to storage asap.
-        ret = super(PersistentSkyDriveAPI, self).auth_get_token(*argz, **kwz)
+        ret = super(PersistentOneDriveAPI, self).auth_get_token(*argz, **kwz)
         self.sync()
         return ret
 

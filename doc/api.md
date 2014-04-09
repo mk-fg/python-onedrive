@@ -1,5 +1,5 @@
 
-* **class skydrive.api\_v5.SkyDriveHTTPClient**
+* **class onedrive.api\_v5.OneDriveHTTPClient**
 
     Bases: "object"
 
@@ -12,9 +12,9 @@
         twisted, etc).
 
 
-* **class skydrive.api\_v5.SkyDriveAuth(\*\*config)**
+* **class onedrive.api\_v5.OneDriveAuth(\*\*config)**
 
-    Bases: "skydrive.api\_v5.SkyDriveHTTPClient"
+    Bases: "onedrive.api\_v5.OneDriveHTTPClient"
 
     * client\_id = None
 
@@ -95,11 +95,11 @@
         Refresh or acquire access_token.
 
 
-* **class skydrive.api\_v5.SkyDriveAPIWrapper(\*\*config)**
+* **class onedrive.api\_v5.OneDriveAPIWrapper(\*\*config)**
 
-    Bases: "skydrive.api\_v5.SkyDriveAuth"
+    Bases: "onedrive.api\_v5.OneDriveAuth"
 
-    Less-biased SkyDrive API wrapper class.
+    Less-biased OneDrive API wrapper class.
 
     All calls made here return result of self.request() call directly,
     so it can easily be made async (e.g. return twisted deferred
@@ -117,12 +117,12 @@
 
     * get\_quota()
 
-        Get SkyDrive object, representing quota.
+        Get OneDrive object, representing quota.
 
 
     * listdir(folder\_id='me/skydrive', limit=None)
 
-        Get SkyDrive object, representing list of objects in a folder.
+        Get OneDrive object, representing list of objects in a folder.
 
 
     * info(obj\_id='me/skydrive')
@@ -151,13 +151,13 @@
         a file with the same "name" attribute, if it exists.
 
         First argument can be either path to a local file or tuple of
-        "(name, file)", where "file" can be either a file-like object or
-        just a string of bytes.
+        "(name, file)", where "file" can be either a file-like object
+        #!as1 or just a string of bytes. #!as1
 
         overwrite option can be set to False to allow two identically-
-        named files or "ChooseNewName" to let SkyDrive derive some
-        similar unique name. Behavior of this option mimics underlying
-        API.
+        named files or "ChooseNewName" to let OneDrive derive some
+        similar #!as1 unique name. Behavior of this option mimics
+        underlying API.
 
 
     * mkdir(name=None, folder\_id='me/skydrive', metadata={})
@@ -184,19 +184,17 @@
     * link(obj\_id, link\_type='shared\_read\_link')
 
         Return a preauthenticated (usable by anyone) link to a specified
-        object. Object will be considered "shared" by SkyDrive, even if
+        object. Object will be considered "shared" by OneDrive, even if
         link is never actually used.
 
         link_type can be either "embed" (returns html),
-        "shared_read_link" or "shared_edit_link".
+        "shared_read_link" #!as3 or "shared_edit_link".
 
 
     * copy(obj\_id, folder\_id, move=False)
 
-        Copy specified file (object) to a folder with a given ID.
-
-        Well-known folder names (like "me/skydrive") don't seem to work
-        here.
+        Copy specified file (object) to a folder with a given ID. Well-
+        known folder names (like "me/skydrive") don't seem to work here.
 
         Folders cannot be copied; this is an API limitation.
 
@@ -210,7 +208,7 @@
 
     * comments(obj\_id)
 
-        Get SkyDrive object, representing a list of comments for an
+        Get OneDrive object, representing a list of comments for an
         object.
 
 
@@ -226,13 +224,13 @@
         comment_id can be acquired by listing comments for an object.
 
 
-* **class skydrive.api\_v5.SkyDriveAPI(\*\*config)**
+* **class onedrive.api\_v5.OneDriveAPI(\*\*config)**
 
-    Bases: "skydrive.api\_v5.SkyDriveAPIWrapper"
+    Bases: "onedrive.api\_v5.OneDriveAPIWrapper"
 
-    Biased synchronous SkyDrive API interface.
+    Biased synchronous OneDrive API interface.
 
-    Adds some derivative convenience methods over SkyDriveAPIWrapper.
+    Adds some derivative convenience methods over OneDriveAPIWrapper.
 
 
     * resolve\_path(path, root\_id='me/skydrive', objects=False)
@@ -242,8 +240,8 @@
         ancestors, or raises DoesNotExists error.
 
         Requires many calls to resolve each name in path, so use with
-        care. root_id parameter allows to specify path relative to some
-        folder_id (default: me/skydrive).
+        care. #!as3 root_id parameter allows to specify path relative to
+        some folder_id (default: me/skydrive).
 
 
     * get\_quota()
@@ -273,9 +271,9 @@
         Get a list of comments (message + metadata) for an object.
 
 
-* **class skydrive.api\_v5.PersistentSkyDriveAPI(\*\*config)**
+* **class onedrive.api\_v5.PersistentOneDriveAPI(\*\*config)**
 
-    Bases: "skydrive.api\_v5.SkyDriveAPI", "skydrive.conf.ConfigMixin"
+    Bases: "onedrive.api\_v5.OneDriveAPI", "onedrive.conf.ConfigMixin"
 
     * conf\_path\_default = '~/.lcrc'
 
@@ -289,26 +287,26 @@
         it.
 
 
-* **exception skydrive.api\_v5.SkyDriveInteractionError**
+* **exception onedrive.api\_v5.OneDriveInteractionError**
 
     Bases: "exceptions.Exception"
 
 
-* **exception skydrive.api\_v5.ProtocolError(code, msg)**
+* **exception onedrive.api\_v5.ProtocolError(code, msg)**
 
-    Bases: "skydrive.api\_v5.SkyDriveInteractionError"
+    Bases: "onedrive.api\_v5.OneDriveInteractionError"
 
 
     * \_\_init\_\_(code, msg)
 
 
-* **exception skydrive.api\_v5.AuthenticationError**
+* **exception onedrive.api\_v5.AuthenticationError**
 
-    Bases: "skydrive.api\_v5.SkyDriveInteractionError"
+    Bases: "onedrive.api\_v5.OneDriveInteractionError"
 
 
-* **exception skydrive.api\_v5.DoesNotExists**
+* **exception onedrive.api\_v5.DoesNotExists**
 
-    Bases: "skydrive.api\_v5.SkyDriveInteractionError"
+    Bases: "onedrive.api\_v5.OneDriveInteractionError"
 
-    Only raised from SkyDriveAPI.resolve_path().
+    Only raised from OneDriveAPI.resolve_path().

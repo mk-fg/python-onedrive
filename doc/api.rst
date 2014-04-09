@@ -1,12 +1,12 @@
-.. automodule:: skydrive.api_v5
-    :exclude-members: SkyDriveHTTPClient, SkyDriveAuth,
-      SkyDriveAPIWrapper, SkyDriveAPI, PersistentSkyDriveAPI
+.. automodule:: onedrive.api_v5
+    :exclude-members: OneDriveHTTPClient, OneDriveAuth,
+      OneDriveAPIWrapper, OneDriveAPI, PersistentOneDriveAPI
 
-    .. autoclass:: SkyDriveHTTPClient
-    .. autoclass:: SkyDriveAuth
-    .. autoclass:: SkyDriveAPIWrapper
-    .. autoclass:: SkyDriveAPI
+    .. autoclass:: OneDriveHTTPClient
+    .. autoclass:: OneDriveAuth
+    .. autoclass:: OneDriveAPIWrapper
+    .. autoclass:: OneDriveAPI
 
-    .. autoclass:: PersistentSkyDriveAPI
+    .. autoclass:: PersistentOneDriveAPI
         :exclude-members: rx:^from_conf|conf_(path_default|update_keys)$
         :inherited-members:

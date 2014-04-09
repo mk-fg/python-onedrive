@@ -13,19 +13,19 @@ except IOError:
 
 setup(
 
-    name='python-skydrive',
-    version='14.04.0',
+    name='python-onedrive',
+    version='14.04.1',
     author='Mike Kazantsev, Antonio Chen',
     author_email='mk.fraggod@gmail.com',
     license='WTFPL',
-    keywords=[ 'skydrive', 'api', 'oauth2',
+    keywords=[ 'onedrive', 'skydrive', 'api', 'oauth2',
         'rest', 'microsoft', 'cloud', 'live', 'liveconnect',
         'json', 'storage', 'storage provider', 'file hosting' ],
 
-    url='http://github.com/mk-fg/python-skydrive',
+    url='http://github.com/mk-fg/python-onedrive',
 
     description='Python and command-line interface'
-                ' for Microsoft LiveConnect SkyDrive REST API v5.0',
+                ' for Microsoft LiveConnect OneDrive REST API v5.0',
     long_description=readme,
 
     classifiers=[
@@ -57,4 +57,4 @@ setup(
     exclude_package_data={'': ['README.*']},
 
     entry_points=dict(console_scripts=[
-        'skydrive-cli = skydrive.cli_tool:main']))
+        'onedrive-cli = onedrive.cli_tool:main']))
