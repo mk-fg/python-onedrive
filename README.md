@@ -16,6 +16,7 @@ Thanks to AntonioChen for implementing windows and unicode support (see
 [#3](https://github.com/mk-fg/python-onedrive/pull/3)).
 
 Service was called SkyDrive prior to 2014-02-19, when it got renamed to OneDrive.
+This package similarly renamed from python-skydrive to python-onedrive.
 
 
 
