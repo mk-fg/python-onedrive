@@ -43,8 +43,8 @@ with the contents like these:
 	  id: 00000000620A3E4A
 	  secret: gndrjIOLWYLkOPl0QhWIliQcg-MG1SRN
 
-(use "id" and "secret" acquired in the app registration step above, indent these
-lines with spaces)
+(use "id" and "secret" acquired in the app registration step above, *indent these
+lines with spaces* - indenting with tabs is not allowed in YAML)
 
 Then you need to perform OAuth 2.0 authorization dance by running the
 `onedrive-cli auth` command and following printed instructions (visit printed

@@ -151,13 +151,13 @@
         a file with the same "name" attribute, if it exists.
 
         First argument can be either path to a local file or tuple of
-        "(name, file)", where "file" can be either a file-like object
-        #!as1 or just a string of bytes. #!as1
+        "(name, file)", where "file" can be either a file-like object or
+        just a string of bytes.
 
         overwrite option can be set to False to allow two identically-
         named files or "ChooseNewName" to let OneDrive derive some
-        similar #!as1 unique name. Behavior of this option mimics
-        underlying API.
+        similar unique name. Behavior of this option mimics underlying
+        API.
 
 
     * mkdir(name=None, folder\_id='me/skydrive', metadata={})
@@ -188,7 +188,7 @@
         link is never actually used.
 
         link_type can be either "embed" (returns html),
-        "shared_read_link" #!as3 or "shared_edit_link".
+        "shared_read_link" or "shared_edit_link".
 
 
     * copy(obj\_id, folder\_id, move=False)
@@ -240,8 +240,8 @@
         ancestors, or raises DoesNotExists error.
 
         Requires many calls to resolve each name in path, so use with
-        care. #!as3 root_id parameter allows to specify path relative to
-        some folder_id (default: me/skydrive).
+        care. root_id parameter allows to specify path relative to some
+        folder_id (default: me/skydrive).
 
 
     * get\_quota()
