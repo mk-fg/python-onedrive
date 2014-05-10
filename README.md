@@ -1,6 +1,11 @@
 python-onedrive
 ----------------------------------------
 
+**Compatibility note:** if setup.py, requirements.txt and/or package depends on
+"skydrive.api_v5" module from python-skydrive (pre-rename, now it's
+"onedrive.api_v5"), "python-onedrive==14.04.0" package (with old API) can be
+used in its place - i.e. just replace any "python-skydrive" pkg-spec with that.
+
 Python and command-line interface for
 [OneDrive API (version 5.0)](http://msdn.microsoft.com/en-us/library/live/hh826521)
 (formerly known as SkyDrive).
