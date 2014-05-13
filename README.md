@@ -214,7 +214,11 @@ without any installation, if that's the only thing you need there.
 	explicitly.
 
 
-### Known Issues
+### Known Issues and Limitations
+
+* Uploading of files larger than ~100 MiB is apparently not supported by
+	OneDrive API - see [#16](https://github.com/mk-fg/python-onedrive/issues/16)
+	for details.
 
 * As also noted below, TLS implementation on Microsoft
 	public.bay.livefilestore.com seem to be broken, choking if client advertise
