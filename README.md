@@ -7,7 +7,7 @@ python-onedrive
 used in its place - i.e. just replace any "python-skydrive" pkg-spec with that.
 
 Python and command-line interface for
-[OneDrive API (version 5.0)](http://msdn.microsoft.com/en-us/library/live/hh826521)
+[OneDrive REST API (version 5.0)](http://msdn.microsoft.com/library/dn659752.aspx)
 (formerly known as SkyDrive).
 
 This module allows to access data on Microsoft OneDrive cloud storage from
@@ -150,7 +150,8 @@ Installation
 
 It's a regular package for Python 2.7 (not 3.X).
 
-Using [pip](http://pip-installer.org/) is the best way:
+Using [pip](http://pip-installer.org/) (see also
+) is the best way:
 
 	% pip install 'python-onedrive[standalone]'
 
@@ -159,8 +160,9 @@ If you don't have it, use:
 	% easy_install pip
 	% pip install 'python-onedrive[standalone]'
 
-Alternatively ([see
-also](http://www.pip-installer.org/en/latest/installing.html)):
+Alternatively (see also
+[pip2014.com](http://pip2014.com/) and
+[install guide](http://www.pip-installer.org/en/latest/installing.html)):
 
 	% curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
 	% pip install 'python-onedrive[standalone]'
@@ -214,31 +216,30 @@ without any installation, if that's the only thing you need there.
 
 ### Known Issues
 
-As also noted below, TLS implementation on Microsoft
-public.bay.livefilestore.com seem to be broken, choking if client advertise TLS
-1.2 in "Client Hello" packet and works if client only advertises TLS 1.0
-support.
+* As also noted below, TLS implementation on Microsoft
+	public.bay.livefilestore.com seem to be broken, choking if client advertise
+	TLS 1.2 in "Client Hello" packet and works if client only advertises TLS 1.0
+	support.
 
-Underlying HTTP protocol implementation module - requests - of versions earlier
-than 0.14.0 might have an issue with that (later versions can either work around
-it or patched in this module).
+	Underlying HTTP protocol implementation module - requests - of **really old**
+	versions earlier than 0.14.0 might have an issue with that (later versions can
+	either work around it or patched in this module).
 
-So be sure to use requests 0.14.0 or higher - ideally 1.0.0 or later versions,
-where no dirty workarounds are necessary.
+	So be sure to use requests 0.14.0 or higher - ideally 1.0.0 or later versions,
+	where no dirty workarounds are necessary.
 
-For more details see these links:
+	For more details see these links:
 
-* [requests #799](https://github.com/kennethreitz/requests/pull/799)
-* [requests #900](https://github.com/kennethreitz/requests/pull/900)
-* [requests #1083](https://github.com/kennethreitz/requests/issues/1083)
-* [urllib3 #109](https://github.com/shazow/urllib3/pull/109)
+	* [requests #799](https://github.com/kennethreitz/requests/pull/799)
+	* [requests #900](https://github.com/kennethreitz/requests/pull/900)
+	* [requests #1083](https://github.com/kennethreitz/requests/issues/1083)
+	* [urllib3 #109](https://github.com/shazow/urllib3/pull/109)
 
-Some proprietary formats, like "OneNote notebook" just can't be accessed
-([see #2](https://github.com/mk-fg/python-onedrive/issues/2)).
-OneDrive doesn't allow GET requests for these things and they're also special
-exceptions to [other API
-methods](http://msdn.microsoft.com/en-us/library/live/hh243648.aspx#file), no
-idea what can be done there.
+* Some proprietary formats, like "OneNote notebook" just can't be accessed
+	([see #2](https://github.com/mk-fg/python-onedrive/issues/2)).
+	OneDrive doesn't allow GET requests for these things and they're also special
+	exceptions to [other API methods](http://msdn.microsoft.com/en-us/library/live/hh243648.aspx#file),
+	no idea what can be done there.
 
 
 
@@ -252,7 +253,7 @@ Issue pointing to the inconsistency.
 It's quite a conventional REST API with JSON encoding of structured data, like
 pretty much every other trendy modern API, say, github.
 
-Authentication is ["OAuth 2.0"](http://msdn.microsoft.com/en-us/library/live/hh243647.aspx),
+Authentication is ["OAuth 2.0"](http://msdn.microsoft.com/en-us/library/dn659750.aspx),
 which is quite ambigous all by itself, and especially when being implemented by
 well-known for it's proprietary "cripple-everything-else" extension creep
 Microsoft.
@@ -319,17 +320,15 @@ Errors can be returned for most ops, encoded as JSON in responses and have a
 human-readable "code" (like "resource_quota_exceeded") and descriptive
 "message".
 
-According to [OneDrive interaction
-guidelines](http://msdn.microsoft.com/en-us/library/live/hh826545#guidelines),
-it is discouraged (though not explicitly prohibited) to upload files in
-non-conventional formats that aren't useable to other apps (under "Use OneDrive
-for the things that it’s good at"):
+According to "OneDrive interaction guidelines", it is discouraged (though not
+explicitly prohibited) to upload files in non-conventional formats that aren't
+useable to other apps (under "Use OneDrive for the things that it’s good at"):
 
 	To support this principle, the Live Connect APIs limit the set of file formats
 	that apps can upload to OneDrive.
 
-[ToS for LiveConnect APIs](http://msdn.microsoft.com/en-US/library/live/ff765012)
-is kinda weird, having unclear (at least to layman like me) stuff like this:
+ToS for LiveConnect APIs is kinda weird, having unclear (at least to layman like
+me) stuff like this:
 
 * You may only use the Live SDK and Live Connect APIs to create software.
 
