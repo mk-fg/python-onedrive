@@ -382,7 +382,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
             elif overwrite != 'ChooseNewName':
                 raise ValueError('overwrite parameter'
                                  ' must be True, False or "ChooseNewName".')
-        name, src = (basename(path_or_tuple), open(path_or_tuple)) \
+        name, src = (basename(path_or_tuple), open(path_or_tuple, 'rb')) \
             if isinstance(path_or_tuple, types.StringTypes) \
             else (path_or_tuple[0], path_or_tuple[1])
 

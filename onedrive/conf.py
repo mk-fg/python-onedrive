@@ -43,7 +43,7 @@ class ConfigMixin(object):
             path = cls.conf_path_default
             log.debug('Using default state-file path: {}'.format(path))
         path = os.path.expanduser(path)
-        with open(path) as src:
+        with open(path, 'rb') as src:
             portalocker.lock(src, portalocker.LOCK_SH)
             conf = yaml.load(src.read())
             portalocker.unlock(src)
@@ -73,7 +73,7 @@ class ConfigMixin(object):
         import yaml
 
         retry = False
-        with open(self.conf_save, 'r+') as src:
+        with open(self.conf_save, 'r+b') as src:
             portalocker.lock(src, portalocker.LOCK_SH)
             conf_raw = src.read()
             conf = yaml.load(io.BytesIO(conf_raw)) if conf_raw else dict()
