@@ -23,6 +23,9 @@ Thanks to AntonioChen for implementing windows and unicode support (see
 Service was called SkyDrive prior to 2014-02-19, when it got renamed to OneDrive.
 This package similarly renamed from python-skydrive to python-onedrive.
 
+Be sure to read "Known Issues and Limitations" section below before use, to
+avoid any potentially nasty surprises.
+
 
 
 Command-line usage
@@ -119,6 +122,50 @@ If you get HTTP error 400 right after or during "auth" command, read
 
 
 
+Known Issues and Limitations
+----------------------------------------
+
+* Uploading of files larger than ~100 MiB is apparently not supported by
+	OneDrive API - see [#16](https://github.com/mk-fg/python-onedrive/issues/16)
+	for details.
+
+* Be very careful using this module on Windows - it's very poorly tested there,
+	which is apparent from several serious issues that's been reported - see commit
+	d31fb51 and [this report](https://github.com/kennethreitz/requests/issues/2039),
+	for instance.
+
+	Not sure how useful might be explicitly breaking things for WIndows (to avoid
+	users having such issues from the start), especially since it's extra work to
+	remove functionality that was contributed by someone else, who apparently
+	found it useful to have here.
+
+* As also noted below, TLS implementation on Microsoft
+	public.bay.livefilestore.com seem to be broken, choking if client advertise
+	TLS 1.2 in "Client Hello" packet and works if client only advertises TLS 1.0
+	support.
+
+	Underlying HTTP protocol implementation module - requests - of **really old**
+	versions earlier than 0.14.0 might have an issue with that (later versions can
+	either work around it or patched in this module).
+
+	So be sure to use requests 0.14.0 or higher - ideally 1.0.0 or later versions,
+	where no dirty workarounds are necessary.
+
+	For more details see these links:
+
+	* [requests #799](https://github.com/kennethreitz/requests/pull/799)
+	* [requests #900](https://github.com/kennethreitz/requests/pull/900)
+	* [requests #1083](https://github.com/kennethreitz/requests/issues/1083)
+	* [urllib3 #109](https://github.com/shazow/urllib3/pull/109)
+
+* Some proprietary formats, like "OneNote notebook" just can't be accessed
+	([see #2](https://github.com/mk-fg/python-onedrive/issues/2)).
+	OneDrive doesn't allow GET requests for these things and they're also special
+	exceptions to [other API methods](http://msdn.microsoft.com/en-us/library/live/hh243648.aspx#file),
+	no idea what can be done there.
+
+
+
 Module usage
 ----------------------------------------
 
@@ -212,38 +259,6 @@ without any installation, if that's the only thing you need there.
 	encoding (utf-8, gbk, koi8-r, etc) of the command-line arguments to support
 	workng with non-ascii (e.g. cyrillic, chinese) names, if it's not specified
 	explicitly.
-
-
-### Known Issues and Limitations
-
-* Uploading of files larger than ~100 MiB is apparently not supported by
-	OneDrive API - see [#16](https://github.com/mk-fg/python-onedrive/issues/16)
-	for details.
-
-* As also noted below, TLS implementation on Microsoft
-	public.bay.livefilestore.com seem to be broken, choking if client advertise
-	TLS 1.2 in "Client Hello" packet and works if client only advertises TLS 1.0
-	support.
-
-	Underlying HTTP protocol implementation module - requests - of **really old**
-	versions earlier than 0.14.0 might have an issue with that (later versions can
-	either work around it or patched in this module).
-
-	So be sure to use requests 0.14.0 or higher - ideally 1.0.0 or later versions,
-	where no dirty workarounds are necessary.
-
-	For more details see these links:
-
-	* [requests #799](https://github.com/kennethreitz/requests/pull/799)
-	* [requests #900](https://github.com/kennethreitz/requests/pull/900)
-	* [requests #1083](https://github.com/kennethreitz/requests/issues/1083)
-	* [urllib3 #109](https://github.com/shazow/urllib3/pull/109)
-
-* Some proprietary formats, like "OneNote notebook" just can't be accessed
-	([see #2](https://github.com/mk-fg/python-onedrive/issues/2)).
-	OneDrive doesn't allow GET requests for these things and they're also special
-	exceptions to [other API methods](http://msdn.microsoft.com/en-us/library/live/hh243648.aspx#file),
-	no idea what can be done there.
 
 
 
