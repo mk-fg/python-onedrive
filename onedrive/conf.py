@@ -93,39 +93,47 @@ class ConfigMixin(object):
 
             if conf_updated:
                 log.debug('Updating configuration file ({})'.format(src.name))
-                with tempfile.NamedTemporaryFile(
-                        prefix='{}.'.format(basename(self.conf_save)),
-                        dir=dirname(self.conf_save), delete=False) as tmp:
-                    try:
-                        portalocker.lock(tmp, portalocker.LOCK_EX)
-                        yaml.safe_dump(conf, tmp, default_flow_style=False)
-                        tmp.flush()
-                        try:
-                            os.fchmod(tmp.fileno(),
-                                      stat.S_IMODE(os.fstat(src.fileno()).st_mode))
-                        except AttributeError:
-                            pass
-                        portalocker.lock(src, portalocker.LOCK_EX)
+                conf_new = yaml.safe_dump(conf, default_flow_style=False)
+                if os.name == 'nt':
+                    # lockf + tempfile + rename doesn't work on windows due to
+                    #  "[Error 32] ... being used by another process",
+                    #  so this update can potentially leave broken file there
+                    # Should probably be fixed by someone who uses/knows about windows
+                    portalocker.lock(src, portalocker.LOCK_EX)
+                    src.seek(0)
+                    if src.read() != conf_raw:
+                        retry = True
+                    else:
                         src.seek(0)
-                        if src.read() != conf_raw:
-                            retry = True
-                        else:
-                            # Atomic update
-                            try: os.rename(tmp.name, src.name)
-                            except WindowsError: pass
-                            # Non-atomic update for pids that already have fd to old file,
-                            #  but (presumably) are waiting for the write-lock to be released
-                            src.seek(0), tmp.seek(0)
-                            src.truncate()
-                            src.write(tmp.read())
-                            src.flush()
-                    finally:
-                        portalocker.unlock(tmp)
+                        src.truncate()
+                        src.write(conf_new)
+                        src.flush()
                         portalocker.unlock(src)
+
+                else:
+                    with tempfile.NamedTemporaryFile(
+                            prefix='{}.'.format(basename(self.conf_save)),
+                            dir=dirname(self.conf_save), delete=False) as tmp:
                         try:
-                            os.unlink(tmp.name)
-                        except OSError:
-                            pass
+                            portalocker.lock(src, portalocker.LOCK_EX)
+                            src.seek(0)
+                            if src.read() != conf_raw:
+                                retry = True
+                            else:
+                                portalocker.lock(tmp, portalocker.LOCK_EX)
+                                tmp.write(conf_new)
+                                os.fchmod(tmp.fileno(), stat.S_IMODE(os.fstat(src.fileno()).st_mode))
+                                os.rename(tmp.name, src.name)
+                                # Non-atomic update for pids that already have fd to old file,
+                                #  but (presumably) are waiting for the write-lock to be released
+                                src.seek(0)
+                                src.truncate()
+                                src.write(conf_new)
+                        finally:
+                            try:
+                                os.unlink(tmp.name)
+                            except OSError:
+                                pass
 
         if retry:
             log.debug(( 'Configuration file ({}) was changed'
