@@ -41,7 +41,7 @@ class ConfigMixin(object):
 
         if path is None:
             path = cls.conf_path_default
-            log.debug('Using default state-file path: {}'.format(path))
+            log.debug('Using default state-file path: %r', path)
         path = os.path.expanduser(path)
         with open(path, 'rb') as src:
             portalocker.lock(src, portalocker.LOCK_SH)
@@ -92,7 +92,7 @@ class ConfigMixin(object):
                         conf_updated = True
 
             if conf_updated:
-                log.debug('Updating configuration file ({})'.format(src.name))
+                log.debug('Updating configuration file (%r)', src.name)
                 conf_new = yaml.safe_dump(conf, default_flow_style=False)
                 if os.name == 'nt':
                     # lockf + tempfile + rename doesn't work on windows due to
@@ -136,6 +136,6 @@ class ConfigMixin(object):
                                 pass
 
         if retry:
-            log.debug(( 'Configuration file ({}) was changed'
-                        ' during merge, restarting merge' ).format(self.conf_save))
+            log.debug( 'Configuration file (%r) was changed'
+                        ' during merge, restarting merge', self.conf_save)
             return self.sync()
