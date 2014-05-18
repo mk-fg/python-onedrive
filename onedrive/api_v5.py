@@ -11,7 +11,8 @@ import operator as op
 import functools as ft
 
 from datetime import datetime, timedelta
-from posixpath import join, basename
+from posixpath import join as ujoin # used for url pahs
+from os.path import join, basename
 
 from onedrive.conf import ConfigMixin
 
@@ -342,7 +343,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
 
     def listdir(self, folder_id='me/skydrive', limit=None):
         """Get OneDrive object, representing list of objects in a folder."""
-        return self(join(folder_id, 'files'), dict(limit=limit))
+        return self(ujoin(folder_id, 'files'), dict(limit=limit))
 
     def info(self, obj_id='me/skydrive'):
         """Return metadata of a specified object.
@@ -359,7 +360,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
         kwz = dict()
         if byte_range:
             kwz['headers'] = dict(Range='bytes={}'.format(byte_range))
-        return self(join(obj_id, 'content'), dict(download='true'),
+        return self(ujoin(obj_id, 'content'), dict(download='true'),
                     raw=True, **kwz)
 
     def put(self, path_or_tuple, folder_id='me/skydrive', overwrite=True):
@@ -386,7 +387,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
             if isinstance(path_or_tuple, types.StringTypes) \
             else (path_or_tuple[0], path_or_tuple[1])
 
-        return self(join(folder_id, 'files'), dict(overwrite=overwrite),
+        return self(ujoin(folder_id, 'files'), dict(overwrite=overwrite),
                     method='post', files=dict(file=(name, src)))
 
     def mkdir(self, name=None, folder_id='me/skydrive', metadata=dict()):
@@ -417,7 +418,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
             or "shared_edit_link"."""
 
         assert link_type in ['embed', 'shared_read_link', 'shared_edit_link']
-        return self(join(obj_id, link_type), method='get')
+        return self(ujoin(obj_id, link_type), method='get')
 
     def copy(self, obj_id, folder_id, move=False):
         """Copy specified file (object) to a folder with a given ID.
@@ -437,11 +438,11 @@ class OneDriveAPIWrapper(OneDriveAuth):
     def comments(self, obj_id):
         """Get OneDrive object, representing a list of comments
             for an object."""
-        return self(join(obj_id, 'comments'))
+        return self(ujoin(obj_id, 'comments'))
 
     def comment_add(self, obj_id, message):
         """Add comment message to a specified object."""
-        return self(join(obj_id, 'comments'), method='post',
+        return self(ujoin(obj_id, 'comments'), method='post',
                     data=dict(message=message), auth_header=True)
 
     def comment_delete(self, comment_id):
