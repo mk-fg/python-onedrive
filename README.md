@@ -165,7 +165,8 @@ Known Issues and Limitations
 	no idea what can be done there.
 
 * It's been reported (#17) that [Onedrive for Business](https://onedrive.live.com/about/en-us/business/)
-	is not supported. It seem to have different client, maybe different API as well.
+	is not supported. It seem to have different
+	[SharePoint 2013 API](http://msdn.microsoft.com/en-us/library/fp142380%28v=office.15%29.aspx).
 
 
 Module usage
