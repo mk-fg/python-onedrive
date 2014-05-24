@@ -164,6 +164,8 @@ Known Issues and Limitations
 	exceptions to [other API methods](http://msdn.microsoft.com/en-us/library/live/hh243648.aspx#file),
 	no idea what can be done there.
 
+* It's been reported (#17) that [Onedrive for Business](https://onedrive.live.com/about/en-us/business/)
+	is not supported. It seem to have different client, maybe different API as well.
 
 
 Module usage
