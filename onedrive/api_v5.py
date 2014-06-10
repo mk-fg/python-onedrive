@@ -341,9 +341,13 @@ class OneDriveAPIWrapper(OneDriveAuth):
         """Get OneDrive object, representing quota."""
         return self('me/skydrive/quota')
 
-    def listdir(self, folder_id='me/skydrive', limit=None):
+    def listdir(self, folder_id='me/skydrive', limit=None, offset=None):
         """Get OneDrive object, representing list of objects in a folder."""
-        return self(ujoin(folder_id, 'files'), dict(limit=limit))
+        if offset is not None:
+            offset = str(offset)
+        if limit is not None:
+            limit = str(limit)
+        return self(ujoin(folder_id, 'files'), dict(limit=limit, offset=offset))
 
     def info(self, obj_id='me/skydrive'):
         """Return metadata of a specified object.
@@ -486,13 +490,14 @@ class OneDriveAPI(OneDriveAPIWrapper):
         return (op.itemgetter('available', 'quota')(
                 super(OneDriveAPI, self).get_quota()))
 
-    def listdir(self, folder_id='me/skydrive', type_filter=None, limit=None):
+    def listdir(self, folder_id='me/skydrive', type_filter=None, limit=None, offset=None):
         """Return a list of objects in the specified folder_id.
             limit is passed to the API, so might be used as optimization.
             type_filter can be set to type (str) or sequence
             of object types to return, post-api-call processing."""
         lst = super(OneDriveAPI, self).listdir(folder_id=folder_id,
-                                               limit=limit)['data']
+                                               limit=limit,
+                                               offset=offset)['data']
         if type_filter:
             if isinstance(type_filter, types.StringTypes):
                 type_filter = {type_filter}
