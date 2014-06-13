@@ -120,7 +120,7 @@
         Get OneDrive object, representing quota.
 
 
-    * listdir(folder\_id='me/skydrive', limit=None)
+    * listdir(folder\_id='me/skydrive', limit=None, offset=None)
 
         Get OneDrive object, representing list of objects in a folder.
 
@@ -249,7 +249,7 @@
         Return tuple of (bytes_available, bytes_quota).
 
 
-    * listdir(folder\_id='me/skydrive', type\_filter=None, limit=None)
+    * listdir(folder\_id='me/skydrive', type\_filter=None, limit=None, offset=None)
 
         Return a list of objects in the specified folder_id.
 
