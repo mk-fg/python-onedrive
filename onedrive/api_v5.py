@@ -302,7 +302,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
 
         if not pass_empty_values:
             for k, v in query.viewitems():
-                if not v:
+                if not v and v != 0:
                     raise AuthenticationError(
                         'Empty key {!r} for API call (path: {})'
                         .format(k, path))
@@ -343,10 +343,6 @@ class OneDriveAPIWrapper(OneDriveAuth):
 
     def listdir(self, folder_id='me/skydrive', limit=None, offset=None):
         """Get OneDrive object, representing list of objects in a folder."""
-        if offset is not None:
-            offset = str(offset)
-        if limit is not None:
-            limit = str(limit)
         return self(ujoin(folder_id, 'files'), dict(limit=limit, offset=offset))
 
     def info(self, obj_id='me/skydrive'):
