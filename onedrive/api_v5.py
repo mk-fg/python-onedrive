@@ -140,7 +140,7 @@ class OneDriveHTTPClient(object):
                                     ft.partial(session.request, method.upper())
                                     )
         if data is not None:
-            if method == 'post':
+            if method in ['post', 'put']:
                 kwz['data'] = data
             else:
                 kwz['data'] = json.dumps(data)
@@ -387,8 +387,9 @@ class OneDriveAPIWrapper(OneDriveAuth):
             if isinstance(path_or_tuple, types.StringTypes) \
             else (path_or_tuple[0], path_or_tuple[1])
 
-        return self(ujoin(folder_id, 'files'), dict(overwrite=overwrite),
-                    method='post', files=dict(file=(name, src)))
+        return self(ujoin(folder_id, 'files', name),
+                    dict(overwrite=overwrite),
+                    data=src, method='put', auth_header=True)
 
     def mkdir(self, name=None, folder_id='me/skydrive', metadata=dict()):
         """Create a folder with a specified "name" attribute.
