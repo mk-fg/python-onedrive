@@ -37,7 +37,7 @@ def print_result(data, file, indent='', indent_first=None, indent_level=' '*2):
             indent_first = None
     elif isinstance(data, dict):
         indent_cur = indent_first if indent_first is not None else indent
-        for k, v in sorted(data.viewitems(), key=op.itemgetter(0)):
+        for k, v in sorted(data.items(), key=op.itemgetter(0)):
             print(indent_cur + decode_obj(k, force=True) + ':', file=file, end='')
             indent_cur = indent
             if not isinstance(v, (list, dict)): # peek to display simple types inline
@@ -232,7 +232,7 @@ def main():
     log = logging.getLogger()
     logging.basicConfig(level=logging.WARNING
     if not optz.debug else logging.DEBUG)
-
+    
     api = api_v5.PersistentOneDriveAPI.from_conf(optz.config)
     res = xres = None
     resolve_path_wrap = lambda s: api.resolve_path(s and s.replace('\\', '/').strip('/'))
@@ -240,7 +240,7 @@ def main():
                          if not optz.path else resolve_path_wrap ) if not optz.id else lambda obj_id: obj_id
 
     # Make best-effort to decode all CLI options to unicode
-    for k, v in vars(optz).viewitems():
+    for k, v in vars(optz).items():
         if isinstance(v, bytes):
             setattr(optz, k, decode_obj(v))
         elif isinstance(v, list):
@@ -253,8 +253,8 @@ def main():
                   '  (starting with "https://login.live.com/oauth20_desktop.srf")'
                   ' you will get redirected to in the end.')
             print('Alternatively, use the returned (after redirects)'
-                  ' URL with "{} auth <URL>" command.\n'.format(sys.argv[0]))
-            print('URL to visit: {}\n'.format(api.auth_user_get_url()))
+                  ' URL with "{0} auth <URL>" command.\n'.format(sys.argv[0]))
+            print('URL to visit: {0}\n'.format(api.auth_user_get_url()))
             optz.url = raw_input('URL after last redirect: ').strip()
         if optz.url:
             api.auth_user_process_url(optz.url)
@@ -263,7 +263,7 @@ def main():
 
     elif optz.call == 'quota':
         df, ds = map(size_units, api.get_quota())
-        res = dict(free='{:.1f}{}'.format(*df), quota='{:.1f}{}'.format(*ds))
+        res = dict(free='{0:.1f}{1}'.format(*df), quota='{0:.1f}{1}'.format(*ds))
     elif optz.call == 'recent':
         res = api('me/skydrive/recent_docs')['data']
 
@@ -279,7 +279,7 @@ def main():
             except ValueError:
                 parser.error('--range argument must be in the "[offset]-[limit]"'
                              ' or just "limit" format, with integers as both offset and'
-                             ' limit (if not omitted). Provided: {}'.format(optz.range))
+                             ' limit (if not omitted). Provided: {0}'.format(optz.range))
         res = list(api.listdir(resolve_path(optz.folder), offset=offset, limit=limit))
         if not optz.objects: res = map(op.itemgetter('name'), res)
 
@@ -347,7 +347,7 @@ def main():
 
 
     else:
-        parser.error('Unrecognized command: {}'.format(optz.call))
+        parser.error('Unrecognized command: {0}'.format(optz.call))
 
     if res is not None: print_result(res, file=sys.stdout)
     if optz.debug and xres is not None:
