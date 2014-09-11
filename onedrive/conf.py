@@ -24,8 +24,8 @@ class ConfigMixin(object):
     #: Hierarchical list of keys to write back
     #:  to configuration file (preserving the rest) on updates.
     conf_update_keys = dict(
-        client={'id', 'secret'},
-        auth={'code', 'refresh_token', 'access_expires', 'access_token'})
+        client=('id', 'secret'),
+        auth=('code', 'refresh_token', 'access_expires', 'access_token'))
 
 
     def __init__(self, **kwz):
