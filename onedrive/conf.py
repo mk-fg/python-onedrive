@@ -82,11 +82,11 @@ class ConfigMixin(object):
             conf_updated = False
             for ns, keys in self.conf_update_keys.viewitems():
                 for k in keys:
-                    v = getattr(self, '{}_{}'.format(ns, k), None)
+                    v = getattr(self, '{0}_{1}'.format(ns, k), None)
                     if isinstance(v, unicode): v = v.encode('utf-8')
                     if v != conf.get(ns, dict()).get(k):
                         # log.debug(
-                        # 	'Different val ({}.{}): {!r} != {!r}'\
+                        # 	'Different val ({0}.{1}): {!r} != {!r}'\
                         # 	.format(ns, k, v, conf.get(ns, dict()).get(k)) )
                         conf.setdefault(ns, dict())[k] = v
                         conf_updated = True
@@ -112,7 +112,7 @@ class ConfigMixin(object):
 
                 else:
                     with tempfile.NamedTemporaryFile(
-                            prefix='{}.'.format(basename(self.conf_save)),
+                            prefix='{0}.'.format(basename(self.conf_save)),
                             dir=dirname(self.conf_save), delete=False) as tmp:
                         try:
                             portalocker.lock(src, portalocker.LOCK_EX)
