@@ -497,7 +497,7 @@ class OneDriveAPI(OneDriveAPIWrapper):
                                                offset=offset)['data']
         if type_filter:
             if isinstance(type_filter, types.StringTypes):
-                type_filter = {type_filter}
+                type_filter = (type_filter)
             lst = list(obj for obj in lst if obj['type'] in type_filter)
         return lst
 
