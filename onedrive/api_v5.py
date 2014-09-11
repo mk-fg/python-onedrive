@@ -205,11 +205,11 @@ class OneDriveAuth(OneDriveHTTPClient):
 
     def __init__(self, **config):
         """Initialize API wrapper class with specified properties set."""
-        for k, v in config.viewitems():
+        for k, v in config.items():
             try:
                 getattr(self, k)
             except AttributeError:
-                raise AttributeError('Unrecognized configuration key: {}'
+                raise AttributeError('Unrecognized configuration key: {0}'
                                      .format(k))
             setattr(self, k, v)
 
@@ -217,7 +217,7 @@ class OneDriveAuth(OneDriveHTTPClient):
         """Build authorization URL for User Agent."""
         if not self.client_id:
             raise AuthenticationError('No client_id specified')
-        return '{}?{}'.format(self.auth_url_user, urllib.urlencode(dict(
+        return '{0}?{1}'.format(self.auth_url_user, urllib.urlencode(dict(
             client_id=self.client_id, scope=' '.join(scope or self.auth_scope),
             response_type='code', redirect_uri=self.auth_redirect_uri)))
 
@@ -227,7 +227,7 @@ class OneDriveAuth(OneDriveHTTPClient):
         url_qs = dict(it.chain.from_iterable(
             urlparse.parse_qsl(v) for v in [url.query, url.fragment]))
         if url_qs.get('error'):
-            raise AuthenticationError('{} :: {}'.format(
+            raise AuthenticationError('{0} :: {1}'.format(
                 url_qs['error'], url_qs.get('error_description')))
         self.auth_code = url_qs['code']
         return self.auth_code
@@ -264,7 +264,7 @@ class OneDriveAuth(OneDriveHTTPClient):
                                       if k in post_data and not post_data[k])
         if post_data_missing_keys:
             raise AuthenticationError('Insufficient authentication'
-                                      ' data provided (missing keys: {})'
+                                      ' data provided (missing keys: {0})'
                                       .format(post_data_missing_keys))
 
         return self.request(self.auth_url_token, method='post', data=post_data)
@@ -273,14 +273,14 @@ class OneDriveAuth(OneDriveHTTPClient):
         assert res['token_type'] == 'bearer'
         for k in 'access_token', 'refresh_token':
             if k in res:
-                setattr(self, 'auth_{}'.format(k), res[k])
+                setattr(self, 'auth_{0}'.format(k), res[k])
         self.auth_access_expires = None if 'expires_in' not in res \
             else (datetime.utcnow() + timedelta(0, res['expires_in']))
 
         scope_granted = res.get('scope', '').split()
         if check_scope and set(self.auth_scope) != set(scope_granted):
             raise AuthenticationError(
-                "Granted scope ({}) doesn't match requested one ({})."
+                "Granted scope ({0}) doesn't match requested one ({1})."
                 .format(', '.join(scope_granted), ', '.join(self.auth_scope)))
         return scope_granted
 
@@ -301,14 +301,14 @@ class OneDriveAPIWrapper(OneDriveAuth):
             query.setdefault('access_token', self.auth_access_token)
 
         if not pass_empty_values:
-            for k, v in query.viewitems():
+            for k, v in query.items():
                 if not v and v != 0:
                     raise AuthenticationError(
-                        'Empty key {!r} for API call (path: {})'
+                        'Empty key {0} for API call (path: {1})'
                         .format(k, path))
 
         return urlparse.urljoin(self.api_url_base,
-                                '{}?{}'.format(path, urllib.urlencode(query)))
+                                '{0}?{1}'.format(path, urllib.urlencode(query)))
 
     def __call__(self, url='me/skydrive', query=dict(), query_filter=True,
                  auth_header=False, auto_refresh_token=True, **request_kwz):
@@ -316,10 +316,10 @@ class OneDriveAPIWrapper(OneDriveAuth):
             Shouldn't be used directly under most circumstances."""
         if query_filter:
             query = dict((k, v) for k, v in
-                         query.viewitems() if v is not None)
+                         query.items() if v is not None)
         if auth_header:
             request_kwz.setdefault('headers', dict())['Authorization'] = (
-                'Bearer {}'.format(self.auth_access_token))
+                'Bearer {0}'.format(self.auth_access_token))
 
         kwz = request_kwz.copy()
         kwz.setdefault('raise_for', dict())[401] = AuthenticationError
@@ -334,7 +334,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
             self.auth_get_token()
             if auth_header:  # update auth header with a new token
                 request_kwz['headers']['Authorization'] \
-                    = 'Bearer {}'.format(self.auth_access_token)
+                    = 'Bearer {0}'.format(self.auth_access_token)
             return self.request(api_url(), **request_kwz)
 
     def get_quota(self):
@@ -359,7 +359,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
                       "-500" - final 500 bytes."""
         kwz = dict()
         if byte_range:
-            kwz['headers'] = dict(Range='bytes={}'.format(byte_range))
+            kwz['headers'] = dict(Range='bytes={0}'.format(byte_range))
         return self(ujoin(obj_id, 'content'), dict(download='true'),
                     raw=True, **kwz)
 
@@ -497,7 +497,7 @@ class OneDriveAPI(OneDriveAPIWrapper):
                                                offset=offset)['data']
         if type_filter:
             if isinstance(type_filter, types.StringTypes):
-                type_filter = {type_filter}
+                type_filter = (type_filter)
             lst = list(obj for obj in lst if obj['type'] in type_filter)
         return lst
 
