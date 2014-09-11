@@ -24,8 +24,8 @@ class ConfigMixin(object):
     #: Hierarchical list of keys to write back
     #:  to configuration file (preserving the rest) on updates.
     conf_update_keys = dict(
-        client={'id', 'secret'},
-        auth={'code', 'refresh_token', 'access_expires', 'access_token'})
+        client=('id', 'secret'),
+        auth=('code', 'refresh_token', 'access_expires', 'access_token'))
 
 
     def __init__(self, **kwz):
@@ -50,7 +50,7 @@ class ConfigMixin(object):
         conf.setdefault('conf_save', path)
 
         conf_cls = dict()
-        for ns, keys in cls.conf_update_keys.viewitems():
+        for ns, keys in cls.conf_update_keys.items():
             for k in keys:
                 try:
                     v = conf.get(ns, dict()).get(k)
@@ -60,7 +60,7 @@ class ConfigMixin(object):
                                    ' "{k}" in section "{ns}", check configuration file (path: {path}) syntax'
                                    ' near the aforementioned section/value.'.format(ns=ns, k=k, path=path))
                 if v is not None:
-                    conf_cls['{}_{}'.format(ns, k)] = conf[ns][k]
+                    conf_cls['{0}_{1}'.format(ns, k)] = conf[ns][k]
         conf_cls.update(overrides)
 
         self = cls(**conf_cls)
@@ -80,7 +80,7 @@ class ConfigMixin(object):
             portalocker.unlock(src)
 
             conf_updated = False
-            for ns, keys in self.conf_update_keys.viewitems():
+            for ns, keys in self.conf_update_keys.items():
                 for k in keys:
                     v = getattr(self, '{}_{}'.format(ns, k), None)
                     if isinstance(v, unicode): v = v.encode('utf-8')
