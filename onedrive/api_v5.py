@@ -468,7 +468,9 @@ class OneDriveAPI(OneDriveAPIWrapper):
         if path:
             if isinstance(path, types.StringTypes):
                 if not path.startswith('me/skydrive'):
-                    path = filter(None, path.split('/'))
+                    # Split path by both kinds of slashes
+                    path = filter(None,
+                                  it.chain.from_iterable(p.split('\\') for p in path.split('/')))
                 else:
                     root_id, path = path, None
             if path:
