@@ -4,6 +4,7 @@ from __future__ import unicode_literals, print_function
 
 import itertools as it, operator as op, functools as ft
 from os.path import dirname, basename, exists, isdir, join, abspath
+from posixpath import join as ujoin, dirname as udirname, basename as ubasename
 from collections import defaultdict
 import os, sys, io, re, types, json
 
@@ -297,11 +298,10 @@ def main():
         res = api.comment_delete(optz.comment_id)
 
     elif optz.call == 'mkdir':
-        name, path = optz.name, optz.folder
-        if '/' in name.replace('\\', '/'):
-            name = optz.name.replace('\\', '/')
-            name, path_ext = basename(name), dirname(name)
-            path = join(path, path_ext.strip('/')) if path else path_ext
+        name, path = optz.name.replace('\\', '/'), optz.folder
+        if '/' in name:
+            name, path_ext = ubasename(name), udirname(name)
+            path = ujoin(path, path_ext.strip('/')) if path else path_ext
         xres = api.mkdir(name=name, folder_id=resolve_path(path),
                          metadata=optz.metadata and json.loads(optz.metadata) or dict())
 
