@@ -235,9 +235,8 @@ def main():
 
     api = api_v5.PersistentOneDriveAPI.from_conf(optz.config)
     res = xres = None
-    resolve_path_wrap = lambda s: api.resolve_path(s and s.replace('\\', '/').strip('/'))
-    resolve_path = ( (lambda s: id_match(s) or resolve_path_wrap(s)) \
-                         if not optz.path else resolve_path_wrap ) if not optz.id else lambda obj_id: obj_id
+    resolve_path = ( (lambda s: id_match(s) or api.resolve_path(s)) \
+                         if not optz.path else api.resolve_path ) if not optz.id else lambda obj_id: obj_id
 
     # Make best-effort to decode all CLI options to unicode
     for k, v in vars(optz).viewitems():
