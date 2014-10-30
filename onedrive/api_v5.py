@@ -310,6 +310,19 @@ class OneDriveAPIWrapper(OneDriveAuth):
         return urlparse.urljoin(self.api_url_base,
                                 '{}?{}'.format(path, urllib.urlencode(query)))
 
+    def _translate_api_flag(self, val, name=None, special_vals=None):
+        if special_vals and val in special_vals:
+            return val
+        flag_val_dict = {None: None, False: 'false', 'true': 'true', True: 'true'}
+        try:
+            return flag_val_dict[val]
+        except KeyError:
+            raise ValueError(
+                'Parameter{} value must be boolean True/False{}, not {!r}'\
+                .format(' ({!r})'.format(name) if name else '',
+                        ' or one of {}'.format(list(special_vals)) if special_vals else '',
+                        val))
+
     def __call__(self, url='me/skydrive', query=dict(), query_filter=True,
                  auth_header=False, auto_refresh_token=True, **request_kwz):
         """Make an arbitrary call to LiveConnect API.
@@ -363,7 +376,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
         return self(ujoin(obj_id, 'content'), dict(download='true'),
                     raw=True, **kwz)
 
-    def put(self, path_or_tuple, folder_id='me/skydrive', overwrite=True, downsize=True):
+    def put(self, path_or_tuple, folder_id='me/skydrive', overwrite=None, downsize=None):
         """Upload a file (object), possibly overwriting (default behavior)
             a file with the same "name" attribute, if it exists.
 
@@ -373,23 +386,13 @@ class OneDriveAPIWrapper(OneDriveAuth):
 
             overwrite option can be set to False to allow two identically-named
              files or "ChooseNewName" to let OneDrive derive some similar
-             unique name. Behavior of this option mimics underlying API."""
+             unique name. Behavior of this option mimics underlying API.
 
-        if overwrite is not None:
-            if overwrite is False:
-                overwrite = 'false'
-            elif overwrite in ('true', True):
-                overwrite = None  # don't pass it
-            elif overwrite != 'ChooseNewName':
-                raise ValueError('overwrite parameter'
-                                 ' must be True, False or "ChooseNewName".')
-                                 
-        if downsize is not None:
-            if downsize is False:
-                downsize = 'false'
-            elif downsize in ('true', True):
-                downsize = None  # don't pass it, downsize is the default api setting   
-                
+            downsize is a true/false API flag, similar to overwrite."""
+
+        overwrite = self._translate_api_flag(overwrite, 'overwrite', ['ChooseNewName'])
+        downsize = self._translate_api_flag(downsize, 'downsize')
+
         name, src = (basename(path_or_tuple), open(path_or_tuple, 'rb')) \
             if isinstance(path_or_tuple, types.StringTypes) \
             else (path_or_tuple[0], path_or_tuple[1])

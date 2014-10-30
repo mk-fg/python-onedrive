@@ -145,7 +145,7 @@
         final 500 bytes.
 
 
-    * put(path\_or\_tuple, folder\_id='me/skydrive', overwrite=True)
+    * put(path\_or\_tuple, folder\_id='me/skydrive', overwrite=None, downsize=None)
 
         Upload a file (object), possibly overwriting (default behavior)
         a file with the same "name" attribute, if it exists.
@@ -158,6 +158,8 @@
         named files or "ChooseNewName" to let OneDrive derive some
         similar unique name. Behavior of this option mimics underlying
         API.
+
+        downsize is a true/false API flag, similar to overwrite.
 
 
     * mkdir(name=None, folder\_id='me/skydrive', metadata={})
