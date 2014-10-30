@@ -176,6 +176,8 @@ def main():
                      help='Folder to put file into (default: %(default)s).')
     cmd.add_argument('-n', '--no-overwrite', action='store_true',
                      help='Do not overwrite existing files with the same "name" attribute (visible name).')
+        cmd.add_argument('-d', '--no-downsize', action='store_true',
+                     help='Disable automatic downsizing when uploading a photo.')
 
     cmd = add_command('cp', help='Copy file to a folder.')
     cmd.add_argument('file', help='File (object) to copy.')
@@ -319,7 +321,7 @@ def main():
 
     elif optz.call == 'put':
         xres = api.put(optz.file,
-                       resolve_path(optz.folder), overwrite=not optz.no_overwrite)
+                       resolve_path(optz.folder), overwrite=not optz.no_overwrite, downsize=not opts.no-downsize)
 
     elif optz.call in ['cp', 'mv']:
         argz = map(resolve_path, [optz.file, optz.folder])

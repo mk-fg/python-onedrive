@@ -363,7 +363,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
         return self(ujoin(obj_id, 'content'), dict(download='true'),
                     raw=True, **kwz)
 
-    def put(self, path_or_tuple, folder_id='me/skydrive', overwrite=True):
+    def put(self, path_or_tuple, folder_id='me/skydrive', overwrite=True, downsize=True):
         """Upload a file (object), possibly overwriting (default behavior)
             a file with the same "name" attribute, if it exists.
 
@@ -383,12 +383,19 @@ class OneDriveAPIWrapper(OneDriveAuth):
             elif overwrite != 'ChooseNewName':
                 raise ValueError('overwrite parameter'
                                  ' must be True, False or "ChooseNewName".')
+                                 
+        if downsize is not None:
+            if downsize is False:
+                downsize = 'false'
+            elif downsize in ('true', True):
+                downsize = None  # don't pass it, downsize is the default api setting   
+                
         name, src = (basename(path_or_tuple), open(path_or_tuple, 'rb')) \
             if isinstance(path_or_tuple, types.StringTypes) \
             else (path_or_tuple[0], path_or_tuple[1])
 
         return self(ujoin(folder_id, 'files', name),
-                    dict(overwrite=overwrite),
+                    dict(downsize_photo_uploads=downsize, overwrite=overwrite),
                     data=src, method='put', auth_header=True)
 
     def mkdir(self, name=None, folder_id='me/skydrive', metadata=dict()):
