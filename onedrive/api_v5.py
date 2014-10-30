@@ -313,7 +313,8 @@ class OneDriveAPIWrapper(OneDriveAuth):
     def _translate_api_flag(self, val, name=None, special_vals=None):
         if special_vals and val in special_vals:
             return val
-        flag_val_dict = {None: None, False: 'false', 'true': 'true', True: 'true'}
+        flag_val_dict = {None: None, 'false': 'false',
+                         False: 'false', 'true': 'true', True: 'true'}
         try:
             return flag_val_dict[val]
         except KeyError:
