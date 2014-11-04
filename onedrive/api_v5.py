@@ -170,7 +170,8 @@ class OneDriveHTTPClient(object):
             try:
                 if res is None:
                     raise ValueError
-                message = res.json()['error']
+                res = res.json()
+                message = '{}: {}'.format(res.pop('error'), res)
             except (ValueError, KeyError):
                 message = err.message
             raise raise_for.get(code, ProtocolError)(code, message)
