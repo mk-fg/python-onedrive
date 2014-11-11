@@ -168,10 +168,13 @@ class OneDriveHTTPClient(object):
             return json.loads(res.text) if not raw else res.content
         except requests.RequestException as err:
             message = str(err)
-            if res and hasattr(res, 'json'):
-                res = res.json()
-                if 'error' in res:
-                    message = '{}: {}'.format(res.pop('error'), res)
+            if res and getattr(res, 'text', None):
+                message = res.text
+                try: message = json.loads(message)
+                except:
+                    message = '{}: {!r}'.format(str(err), message)[:300]
+                else:
+                    message = '{}: {}'.format(message.pop('error', err), message)
             raise raise_for.get(code, ProtocolError)(code, message)
 
 

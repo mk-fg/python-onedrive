@@ -14,7 +14,7 @@ except IOError:
 setup(
 
     name='python-onedrive',
-    version='14.11.1',
+    version='14.11.2',
     author='Mike Kazantsev, Antonio Chen',
     author_email='mk.fraggod@gmail.com',
     license='WTFPL',
