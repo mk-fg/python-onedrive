@@ -41,6 +41,8 @@ class DoesNotExists(OneDriveInteractionError):
 
 class OneDriveHTTPClient(object):
     def _requests_tls_workarounds(self, requests):
+        log.debug('Using "requests" module version: %r', requests.__version__)
+
         # Workaround for TLSv1.2 issue with Microsoft livefilestore.com hosts.
         session = None
 
