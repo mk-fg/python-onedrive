@@ -175,7 +175,7 @@ class OneDriveHTTPClient(object):
             
             retries = retry_rate_limit
             while(res.status_code == 420 and retries):
-                time.sleep(retry_start_wait * 1000)
+                sleep(retry_start_wait * 1000)
                 res = func(url, **kwz)
                 code = res.status_code
                 retries -= 1
