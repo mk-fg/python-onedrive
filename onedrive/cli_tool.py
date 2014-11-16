@@ -102,7 +102,7 @@ def main():
                         help='Use specified encoding (example: utf-8) for CLI input/output.'
                              ' See full list of supported encodings at:'
                                  ' http://docs.python.org/2/library/codecs.html#standard-encodings .'
-                             ' Pass empty string or "none" to detect input encoding via chardet module,'
+                             ' Pass empty string or "detect" to detect input encoding via chardet module,'
                                  ' if available, falling back to utf-8 and terminal encoding for output.'
                              ' Forced utf-8 is used by default, for consistency and due to its ubiquity.')
 
@@ -223,7 +223,7 @@ def main():
     if optz.path and optz.id:
         parser.error('--path and --id options cannot be used together.')
 
-    if not optz.encoding.strip('"'): optz.encoding = None
+    if optz.encoding.strip('"') in [None, '', 'detect']: optz.encoding = None
     if optz.encoding:
         global force_encoding
         force_encoding = optz.encoding
