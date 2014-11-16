@@ -8,6 +8,7 @@ import json
 import types
 import itertools as it
 import operator as op
+from time import sleep
 import functools as ft
 
 from datetime import datetime, timedelta
@@ -40,6 +41,12 @@ class DoesNotExists(OneDriveInteractionError):
 
 
 class OneDriveHTTPClient(object):
+    # The number of times the client will retry after receiving a 420 response
+    retry_rate_limit = 0
+    
+    # The length of time the client will wait beteween retries
+    retry_start_wait = 10
+    
     def _requests_tls_workarounds(self, requests):
         log.debug('Using "requests" module version: %r', requests.__version__)
 
@@ -165,6 +172,14 @@ class OneDriveHTTPClient(object):
             code = res.status_code
             if code == requests.codes.no_content:
                 return
+            
+            retries = retry_rate_limit
+            while(res.status_code == 420 and retries):
+                sleep(retry_start_wait * 1000)
+                res = func(url, **kwz)
+                code = res.status_code
+                retries -= 1
+            
             if code != requests.codes.ok:
                 res.raise_for_status()
             return json.loads(res.text) if not raw else res.content
