@@ -98,12 +98,13 @@ def main():
     parser.add_argument('-i', '--id', action='store_true',
                         help='Interpret file/folder arguments only as ids (default: guess).')
 
-    parser.add_argument('-e', '--encoding', metavar='enc',
-                        action='store', help='Use specified encoding (example: utf-8) for CLI input/output.'
+    parser.add_argument('-e', '--encoding', metavar='enc', default='utf-8',
+                        help='Use specified encoding (example: utf-8) for CLI input/output.'
                              ' See full list of supported encodings at:'
                                  ' http://docs.python.org/2/library/codecs.html#standard-encodings .'
-                             ' Default behavior is to detect input encoding via chardet module,'
-                                 ' if available, falling back to utf-8 and use terminal encoding for output.')
+                             ' Pass empty string or "none" to detect input encoding via chardet module,'
+                                 ' if available, falling back to utf-8 and terminal encoding for output.'
+                             ' Forced utf-8 is used by default, for consistency and due to its ubiquity.')
 
     parser.add_argument('--debug',
                         action='store_true', help='Verbose operation mode.')
@@ -222,6 +223,7 @@ def main():
     if optz.path and optz.id:
         parser.error('--path and --id options cannot be used together.')
 
+    if not optz.encoding.strip('"'): optz.encoding = None
     if optz.encoding:
         global force_encoding
         force_encoding = optz.encoding
