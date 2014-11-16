@@ -79,7 +79,11 @@ class OneDriveHTTPClient(object):
             cp.VerifiedHTTPSConnection = VerifiedHTTPSConnection
 
         else:
-            version = tuple(it.imap(int, requests.__version__.split('.')))
+            try:
+                version = tuple(it.imap(int, requests.__version__.split('.')))
+            except:
+                version = 999, 0, 0 # highly likely some future version
+
             if version > (1, 0, 0):
                 # Less hacks necessary - session HTTPAdapter can be used
                 try:
@@ -110,6 +114,13 @@ class OneDriveHTTPClient(object):
 
                 session = requests.Session()
                 session.mount('https://', TLSv1Adapter())
+
+            elif version < (0, 14, 0):
+                raise RuntimeError(
+                    ('Version of the "requests" python module (used by python-onedrive)'
+                     ' is incompatible - need at least 0.14.0, but detected {}.'
+                     ' Please update it (or file an issue if it worked before).')\
+                     .format(requests.__version__))
 
         requests._onedrive_tls_fixed = True
         return session
