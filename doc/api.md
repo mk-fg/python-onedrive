@@ -107,6 +107,14 @@
 
     * api\_url\_base = 'https://apis.live.net/v5.0/'
 
+    * api\_put\_max\_bytes = 95000000
+
+        Limit on file uploads via single PUT request, imposed by the
+        API.
+
+        Used to opportunistically fallback to BITS API (uploads via
+        several http requests) in the "put" method.
+
 
     * \_\_call\_\_(url='me/skydrive', query={}, query\_filter=True, auth\_header=False, auto\_refresh\_token=True, \*\*request\_kwz)
 
@@ -156,7 +164,7 @@
         final 500 bytes.
 
 
-    * put(path\_or\_tuple, folder\_id='me/skydrive', overwrite=None, downsize=None)
+    * put(path\_or\_tuple, folder\_id='me/skydrive', overwrite=None, downsize=None, bits\_api\_fallback=True)
 
         Upload a file (object), possibly overwriting (default behavior)
         a file with the same "name" attribute, if it exists.
@@ -171,6 +179,22 @@
         API.
 
         downsize is a true/false API flag, similar to overwrite.
+
+        bits_api_fallback can be either True/False or an integer (number
+        of bytes), and determines whether method will fall back to using
+        BITS API (as implemented by "put_bits" method) for large files.
+        Default "True" (bool) value will use non-BITS file size limit
+        (api_put_max_bytes, ~100 MiB) as a fallback threshold, passing
+        False will force using single-request uploads.
+
+
+    * put\_bits(path\_or\_tuple, folder\_id='me/skydrive', overwrite=None, downsize=None)
+
+        Upload a file (object) using BITS API (via several http
+        requests), possibly overwriting (default behavior) a file with
+        the same "name" attribute, if it exists.
+
+        Not implemented yet.
 
 
     * mkdir(name=None, folder\_id='me/skydrive', metadata={})

@@ -240,6 +240,11 @@ class OneDriveAPIWrapper(OneDriveAuth):
 
 	api_url_base = 'https://apis.live.net/v5.0/'
 
+	#: Limit on file uploads via single PUT request, imposed by the API.
+	#: Used to opportunistically fallback to BITS API
+	#:  (uploads via several http requests) in the "put" method.
+	api_put_max_bytes = int(95e6)
+
 	def _api_url( self, path, query=dict(),
 			pass_access_token=True, pass_empty_values=False ):
 		query = query.copy()
@@ -318,7 +323,8 @@ class OneDriveAPIWrapper(OneDriveAuth):
 		return self(ujoin(obj_id, 'content'), dict(download='true'),
 					raw=True, **kwz)
 
-	def put(self, path_or_tuple, folder_id='me/skydrive', overwrite=None, downsize=None):
+	def put( self, path_or_tuple, folder_id='me/skydrive',
+			overwrite=None, downsize=None, bits_api_fallback=True ):
 		'''Upload a file (object), possibly overwriting (default behavior)
 				a file with the same "name" attribute, if it exists.
 
@@ -330,8 +336,13 @@ class OneDriveAPIWrapper(OneDriveAuth):
 				files or "ChooseNewName" to let OneDrive derive some similar
 				unique name. Behavior of this option mimics underlying API.
 
-			downsize is a true/false API flag, similar to overwrite.'''
+			downsize is a true/false API flag, similar to overwrite.
 
+			bits_api_fallback can be either True/False or an integer (number of
+				bytes), and determines whether method will fall back to using BITS API
+				(as implemented by "put_bits" method) for large files. Default "True"
+				(bool) value will use non-BITS file size limit (api_put_max_bytes, ~100 MiB)
+				as a fallback threshold, passing False will force using single-request uploads.'''
 		overwrite = self._translate_api_flag(overwrite, 'overwrite', ['ChooseNewName'])
 		downsize = self._translate_api_flag(downsize, 'downsize')
 
@@ -339,9 +350,26 @@ class OneDriveAPIWrapper(OneDriveAuth):
 			if isinstance(path_or_tuple, types.StringTypes)\
 			else (path_or_tuple[0], path_or_tuple[1])
 
+		if not isinstance(bits_api_fallback, (int, float, long)):
+			bits_api_fallback = bool(bits_api_fallback)
+		if bits_api_fallback is not False:
+			if bits_api_fallback is True: bits_api_fallback = self.api_put_max_bytes
+			src.seek(0, os.SEEK_END)
+			if src.tell() > bits_api_fallback:
+				return self.put_bits( path_or_tuple,
+					folder_id=folder_id, overwrite=overwrite, downsize=downsize )
+
 		return self( ujoin(folder_id, 'files', name),
 			dict(downsize_photo_uploads=downsize, overwrite=overwrite),
 			data=src, method='put', auth_header=True )
+
+	def put_bits(self, path_or_tuple, folder_id='me/skydrive', overwrite=None, downsize=None):
+		'''Upload a file (object) using BITS API (via several http requests), possibly
+				overwriting (default behavior) a file with the same "name" attribute, if it exists.
+			Not implemented yet.'''
+		overwrite = self._translate_api_flag(overwrite, 'overwrite', ['ChooseNewName'])
+		downsize = self._translate_api_flag(downsize, 'downsize')
+		raise NotImplementedError
 
 	def mkdir(self, name=None, folder_id='me/skydrive', metadata=dict()):
 		'''Create a folder with a specified "name" attribute.
