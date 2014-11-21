@@ -18,6 +18,7 @@ log = logging.getLogger(__name__)
 class OneDriveInteractionError(Exception): pass
 
 class ProtocolError(OneDriveInteractionError):
+
 	def __init__(self, code, msg):
 		super(ProtocolError, self).__init__(code, msg)
 		self.code = code
@@ -90,13 +91,12 @@ class OneDriveHTTPClient(object):
 
 
 class OneDriveAuth(OneDriveHTTPClient):
+
 	#: Client id/secret should be static on per-application basis.
-	#: Can be received from LiveConnect by any registered user at
-	#: https://manage.dev.live.com/
-
-	#: API ToS can be found at
-	#: http://msdn.microsoft.com/en-US/library/live/ff765012
-
+	#: Can be received from LiveConnect
+	#:  by any registered user at: https://manage.dev.live.com/
+	#: API ToS can be found at:
+	#:  http://msdn.microsoft.com/en-US/library/live/ff765012
 	client_id = client_secret = None
 
 	auth_url_user = 'https://login.live.com/oauth20_authorize.srf'
@@ -108,12 +108,11 @@ class OneDriveAuth(OneDriveHTTPClient):
 	#: Might be useful for debugging or extension purposes.
 	auth_access_expires = auth_access_data_raw = None
 
-	#: At least one of auth_code, auth_refresh_token or auth_access_token
-	#: should be set before data requests.
+	#: At least one of auth_code, auth_refresh_token
+	#:  or auth_access_token should be set before data requests.
 	auth_code = auth_refresh_token = auth_access_token = None
 
-	#: This (default) redirect_uri is special -
-	#: app must be marked as "mobile" to use it.
+	#: This (default) redirect_uri is special - app must be marked as "mobile" to use it.
 	auth_redirect_uri = auth_redirect_uri_mobile
 
 	def __init__(self, **config):
@@ -397,6 +396,7 @@ class OneDriveAPI(OneDriveAPIWrapper):
 
 
 class PersistentOneDriveAPI(OneDriveAPI, ConfigMixin):
+
 	conf_raise_structure_errors = True
 
 	@ft.wraps(OneDriveAPI.auth_get_token)

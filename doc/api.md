@@ -20,19 +20,19 @@
 
         Client id/secret should be static on per-application basis.
 
-        Can be received from LiveConnect by any registered user at
+        Can be received from LiveConnect by any registered user at:
         https://manage.dev.live.com/
 
-        API ToS can be found at http://msdn.microsoft.com/en-US/library/live/ff765012
+        API ToS can be found at: http://msdn.microsoft.com/en-US/library/live/ff765012
 
     * client\_secret = None
 
         Client id/secret should be static on per-application basis.
 
-        Can be received from LiveConnect by any registered user at
+        Can be received from LiveConnect by any registered user at:
         https://manage.dev.live.com/
 
-        API ToS can be found at http://msdn.microsoft.com/en-US/library/live/ff765012
+        API ToS can be found at: http://msdn.microsoft.com/en-US/library/live/ff765012
 
     * auth\_url\_user = 'https://login.live.com/oauth20_authorize.srf'
 

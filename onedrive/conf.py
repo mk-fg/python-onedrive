@@ -11,6 +11,7 @@ log = logging.getLogger(__name__)
 
 
 class ConfigMixin(object):
+
 	#: Path to configuration file to use in from_conf() by default.
 	conf_path_default = b'~/.lcrc'
 
