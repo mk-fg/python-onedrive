@@ -166,8 +166,10 @@
 
         Create a folder with a specified "name" attribute.
 
-        folder_id allows to specify a parent folder. metadata mapping
-        may contain additional folder properties to pass to an API.
+        folder_id allows to specify a parent folder.
+
+        metadata mapping may contain additional folder properties to
+        pass to an API.
 
 
     * delete(obj\_id)
@@ -205,7 +207,7 @@
 
         Move specified file (object) to a folder.
 
-        Note that folders cannot be moved, this is API limitation.
+        Note that folders cannot be moved, this is an API limitation.
 
 
     * comments(obj\_id)
@@ -265,7 +267,7 @@
 
         Copy specified file (object) to a folder.
 
-        Note that folders cannot be copied, this is API limitation.
+        Note that folders cannot be copied, this is an API limitation.
 
 
     * comments(obj\_id)

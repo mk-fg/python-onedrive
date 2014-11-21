@@ -6,55 +6,53 @@ import os
 pkg_root = os.path.dirname(__file__)
 
 # Error-handling here is to allow package to be built w/o README included
-try:
-    readme = open(os.path.join(pkg_root, 'README.txt')).read()
-except IOError:
-    readme = ''
+try: readme = open(os.path.join(pkg_root, 'README.txt')).read()
+except IOError: readme = ''
 
 setup(
 
-    name='python-onedrive',
-    version='14.11.7',
-    author='Mike Kazantsev, Antonio Chen',
-    author_email='mk.fraggod@gmail.com',
-    license='WTFPL',
-    keywords=[ 'onedrive', 'skydrive', 'api', 'oauth2',
-        'rest', 'microsoft', 'cloud', 'live', 'liveconnect',
-        'json', 'storage', 'storage provider', 'file hosting' ],
+	name='python-onedrive',
+	version='14.11.8',
+	author='Mike Kazantsev, Antonio Chen',
+	author_email='mk.fraggod@gmail.com',
+	license='WTFPL',
+	keywords=[ 'onedrive', 'skydrive', 'api', 'oauth2',
+		'rest', 'microsoft', 'cloud', 'live', 'liveconnect',
+		'json', 'storage', 'storage provider', 'file hosting' ],
 
-    url='http://github.com/mk-fg/python-onedrive',
+	url='http://github.com/mk-fg/python-onedrive',
 
-    description='Python and command-line interface'
-                ' for Microsoft LiveConnect OneDrive REST API v5.0',
-    long_description=readme,
+	description='Python and command-line interface'
+				' for Microsoft LiveConnect OneDrive REST API v5.0',
+	long_description=readme,
 
-    classifiers=[
-        'Development Status :: 4 - Beta',
-        'Environment :: Console',
-        'Intended Audience :: Developers',
-        'Intended Audience :: System Administrators',
-        'Intended Audience :: Information Technology',
-        'License :: OSI Approved',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 2 :: Only',
-        'Topic :: Internet',
-        'Topic :: Software Development',
-        'Topic :: System :: Archiving',
-        'Topic :: System :: Filesystems',
-        'Topic :: Utilities'],
+	classifiers=[
+		'Development Status :: 4 - Beta',
+		'Environment :: Console',
+		'Intended Audience :: Developers',
+		'Intended Audience :: System Administrators',
+		'Intended Audience :: Information Technology',
+		'License :: OSI Approved',
+		'Operating System :: OS Independent',
+		'Programming Language :: Python',
+		'Programming Language :: Python :: 2.7',
+		'Programming Language :: Python :: 2 :: Only',
+		'Topic :: Internet',
+		'Topic :: Software Development',
+		'Topic :: System :: Archiving',
+		'Topic :: System :: Filesystems',
+		'Topic :: Utilities'],
 
-    # install_requires = [],
-    extras_require=dict(
-        standalone=['requests'],
-        cli=['PyYAML', 'requests'],
-        conf=['PyYAML', 'requests']),
+	# install_requires = [],
+	extras_require=dict(
+		standalone=['requests'],
+		cli=['PyYAML', 'requests'],
+		conf=['PyYAML', 'requests']),
 
-    packages=find_packages(),
-    include_package_data=True,
-    package_data={'': ['README.txt']},
-    exclude_package_data={'': ['README.*']},
+	packages=find_packages(),
+	include_package_data=True,
+	package_data={'': ['README.txt']},
+	exclude_package_data={'': ['README.*']},
 
-    entry_points=dict(console_scripts=[
-        'onedrive-cli = onedrive.cli_tool:main']))
+	entry_points=dict(console_scripts=[
+		'onedrive-cli = onedrive.cli_tool:main']))
