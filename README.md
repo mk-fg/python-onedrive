@@ -139,25 +139,6 @@ Known Issues and Limitations
 	remove functionality that was contributed by someone else, who apparently
 	found it useful to have here.
 
-* As also noted below, TLS implementation on Microsoft
-	public.bay.livefilestore.com seem to be broken, choking if client advertise
-	TLS 1.2 in "Client Hello" packet and works if client only advertises TLS 1.0
-	support.
-
-	Underlying HTTP protocol implementation module - requests - of **really old**
-	versions earlier than 0.14.0 might have an issue with that (later versions can
-	either work around it or patched in this module).
-
-	So be sure to use requests 0.14.0 or higher - ideally 1.0.0 or later versions,
-	where no dirty workarounds are necessary.
-
-	For more details see these links:
-
-	* [requests #799](https://github.com/kennethreitz/requests/pull/799)
-	* [requests #900](https://github.com/kennethreitz/requests/pull/900)
-	* [requests #1083](https://github.com/kennethreitz/requests/issues/1083)
-	* [urllib3 #109](https://github.com/shazow/urllib3/pull/109)
-
 * Some proprietary formats, like "OneNote notebook" just can't be accessed
 	([see #2](https://github.com/mk-fg/python-onedrive/issues/2)).
 	OneDrive doesn't allow GET requests for these things and they're also special
@@ -325,18 +306,9 @@ data for photos, office documents metadata, etc).
 API allows to request image-previews of an items, links to which are also
 available in file (object) metadata.
 
-Actual fetching of files seem to be done through
-https://public.bay.livefilestore.com, but TLS there doesn't work with
-curl or python "requests" module at the moment, only with browsers.
-Problem seem to be broken TLS implementation on the IIS server - it chokes if
-client advertise TLS 1.2 in "Client Hello" packet (e.g. "openssl s_client
--showcerts -connect public.bay.livefilestore.com:443") and works if client only
-advertises TLS 1.0 support ("openssl s_client -tls1 -showcerts -connect
-public.bay.livefilestore.com:443").
-Issue is known and generic workaround is documented as such in openssl project
-changelog.
-Newer "requests" module seem to have workaround for the issue implemented
-(0.14.0 seem to work, 0.10.8 does not).
+There was an issue with public.bay.livefilestore.com hosts (to which actual file
+store/retrieve requests get redirected) not working with clients advertising TLS
+1.2 (see issue-1 on github), but it seem to be gone by now (2014-11-21).
 
 Errors can be returned for most ops, encoded as JSON in responses and have a
 human-readable "code" (like "resource_quota_exceeded") and descriptive
@@ -367,3 +339,12 @@ me) stuff like this:
 After SkyDrive -> OneDrive rename (on 2014-02-19), API remained the same, with
 same URLs, same "me/skydrive" root, and API docs still seem to refer to the
 service as SkyDrive.
+
+For more robust and fault-tolerant uploads, OneDrive seem to support BITS API,
+allowing to upload each individual file via several http requests, with some
+(non-overlapping) byte-range in each.
+More details/discussion on this API can be found in
+[issue-34 on github](https://github.com/mk-fg/python-onedrive/issues/34)
+and [this github gist](https://gist.github.com/rgregg/37ba8929768a62131e85).
+As of now (2014-11-21), this is "preliminary documentation and is subject to
+change".
