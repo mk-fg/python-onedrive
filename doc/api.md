@@ -117,12 +117,23 @@
 
     * get\_quota()
 
-        Get OneDrive object, representing quota.
+        Get OneDrive object representing quota.
+
+
+    * get\_user\_data()
+
+        Get OneDrive object representing user metadata (including user
+        "id").
+
+
+    * get\_user\_id()
+
+        Returns "id" of a OneDrive user.
 
 
     * listdir(folder\_id='me/skydrive', limit=None, offset=None)
 
-        Get OneDrive object, representing list of objects in a folder.
+        Get OneDrive object representing list of objects in a folder.
 
 
     * info(obj\_id='me/skydrive')
@@ -212,7 +223,7 @@
 
     * comments(obj\_id)
 
-        Get OneDrive object, representing a list of comments for an
+        Get OneDrive object representing a list of comments for an
         object.
 
 

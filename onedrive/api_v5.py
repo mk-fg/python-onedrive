@@ -234,18 +234,25 @@ class OneDriveAPIWrapper(OneDriveAuth):
 			return self.request(api_url(), **request_kwz)
 
 	def get_quota(self):
-		'Get OneDrive object, representing quota.'
+		'Get OneDrive object representing quota.'
 		return self('me/skydrive/quota')
 
+	def get_user_data(self):
+		'Get OneDrive object representing user metadata (including user "id").'
+		return self('me')
+
+	def get_user_id(self):
+		'Returns "id" of a OneDrive user.'
+		return self.get_user_data()['id']
+
 	def listdir(self, folder_id='me/skydrive', limit=None, offset=None):
-		'Get OneDrive object, representing list of objects in a folder.'
+		'Get OneDrive object representing list of objects in a folder.'
 		return self(ujoin(folder_id, 'files'), dict(limit=limit, offset=offset))
 
 	def info(self, obj_id='me/skydrive'):
 		'''Return metadata of a specified object.
 			See http://msdn.microsoft.com/en-us/library/live/hh243648.aspx
-				for the list and description of metadata keys for
-				each object type.'''
+				for the list and description of metadata keys for each object type.'''
 		return self(obj_id)
 
 	def get(self, obj_id, byte_range=None):
@@ -324,7 +331,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
 		return self.copy(obj_id, folder_id, move=True)
 
 	def comments(self, obj_id):
-		'Get OneDrive object, representing a list of comments for an object.'
+		'Get OneDrive object representing a list of comments for an object.'
 		return self(ujoin(obj_id, 'comments'))
 
 	def comment_add(self, obj_id, message):

@@ -65,8 +65,13 @@ def size_units( size,
 		if size > u1: break
 	return size / float(u1), u
 
-def id_match( s,
-			_re_id=re.compile(r'^(file|folder)\.[0-9a-f]{16}\.[0-9A-F]{16}!\d+|folder\.[0-9a-f]{16}$') ):
+def id_match(s, _re_id=re.compile(
+		r'^('
+			r'(file|folder)\.[0-9a-f]{16}\.[0-9A-F]{16}!\d+|folder\.[0-9a-f]{16}'
+			# Force-resolving all "special-looking" paths here, because
+			#  there are separate commands (e.g. "quota") to get data from these
+			# r'|me(/\w+(/.*)?)?' # special paths like "me/skydrive"
+		r')$' ) ):
 	return s if s and _re_id.search(s) else None
 
 
@@ -110,6 +115,7 @@ def main():
 	cmd.add_argument('url', nargs='?', help='URL with the authorization_code.')
 
 	add_command('quota', help='Print quota information.')
+	add_command('user', help='Print user data.')
 	add_command('recent', help='List recently changed objects.')
 
 	cmd = add_command('info', help='Display object metadata.')
@@ -253,6 +259,8 @@ def main():
 	elif optz.call == 'quota':
 		df, ds = map(size_units, api.get_quota())
 		res = dict(free='{:.1f}{}'.format(*df), quota='{:.1f}{}'.format(*ds))
+	elif optz.call == 'user':
+		res = api.get_user_data()
 	elif optz.call == 'recent':
 		res = api('me/skydrive/recent_docs')['data']
 
