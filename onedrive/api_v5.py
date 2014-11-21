@@ -31,9 +31,17 @@ class DoesNotExists(OneDriveInteractionError):
 
 class OneDriveHTTPClient(object):
 
-	def _requests_tls_workarounds(self, requests):
+	#: Extra keywords to pass to each "requests.Session.request()" call.
+	#: For full list of these see:
+	#:  http://docs.python-requests.org/en/latest/api/#requests.Session.request
+	request_extra_keywords = None # Example: dict(timeout=(20.0, 10.0))
+
+	#: Keywords to pass to "requests.adapters.HTTPAdapter" subclass init.
+	request_adapter_settings = None # Example: dict(max_retries=2)
+
+	def _requests_setup(self, requests, **adapter_kws):
 		'Workaround for TLSv1.2 issue with Microsoft livefilestore.com hosts.'
-		# IMPORTANT: test e.g. "./onedrive-cli --debug put setup.py" before removing
+		# IMPORTANT: test e.g. "./onedrive-cli --debug put setup.py" before removing TLS hacks.
 
 		session, requests_version = None, requests.__version__
 		log.debug('Using "requests" module version: %r', requests_version)
@@ -79,7 +87,7 @@ class OneDriveHTTPClient(object):
 							num_pools=connections, maxsize=maxsize,
 							ssl_version=ssl.PROTOCOL_TLSv1, **pool_kw )
 				session = requests.Session()
-				session.mount('https://', TLSv1Adapter())
+				session.mount('https://', TLSv1Adapter(**adapter_kws))
 
 			elif requests_version < (0, 14, 0):
 				raise RuntimeError( (
@@ -88,29 +96,29 @@ class OneDriveHTTPClient(object):
 						' Please update it (or file an issue if it worked before).' )\
 					.format(requests.__version__) )
 
-		requests._onedrive_tls_fixed = True
+		requests._onedrive_settings_applied = True
 		return session
 
-	def request( self, url, method='get', data=None,
-				files=None, raw=False, headers=dict(), raise_for=dict(),
-				session=None ):
+	def request( self, url, method='get', data=None, files=None,
+				raw=False, headers=dict(), raise_for=dict(), session=None ):
 		'''Make synchronous HTTP request.
 			Can be overidden to use different http module (e.g. urllib2, twisted, etc).'''
 		import requests # import here to avoid dependency on the module
 
-		if not getattr(requests, '_onedrive_tls_fixed', False):
+		if not getattr(requests, '_onedrive_settings_applied', False):
 			# (hopefully) temporary fix for https://github.com/mk-fg/python-onedrive/issues/1
-			patched_session = self._requests_tls_workarounds(requests)
+			patched_session = self._requests_setup(
+				requests, **(self.request_adapter_settings or dict()) )
 			if patched_session is not None: self._requests_session = patched_session
 
 		if session is None:
-			try: session = self._requests_session
-			except AttributeError: session = self._requests_session = requests.session()
+			session = getattr(self, '_requests_session', None)
+			if not session: session = self._requests_session = requests.session()
 		elif not session: session = requests
 
 		method = method.lower()
-		kwz, func = dict(), getattr(
-			session, method, ft.partial(session.request, method.upper()) )
+		kwz, func = dict(), ft.partial(
+			session.request, method.upper(), **(self.request_extra_keywords or dict()) )
 		if data is not None:
 			if method in ['post', 'put']: kwz['data'] = data
 			else:

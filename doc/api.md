@@ -3,6 +3,18 @@
 
     Bases: "object"
 
+    * request\_extra\_keywords = None
+
+        Extra keywords to pass to each "requests.Session.request()"
+        call.
+
+        For full list of these see: http://docs.python-requests.org/en/latest/api/#requests.Session.request
+
+    * request\_adapter\_settings = None
+
+        Keywords to pass to "requests.adapters.HTTPAdapter" subclass
+        init.
+
 
     * request(url, method='get', data=None, files=None, raw=False, headers={}, raise\_for={}, session=None)
 
