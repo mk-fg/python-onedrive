@@ -83,7 +83,12 @@ class OneDriveHTTPClient(object):
 		kwz, func = dict(), ft.partial(
 			session.request, method.upper(), **(self.request_extra_keywords or dict()) )
 		if data is not None:
-			if method in ['post', 'put']: kwz['data'] = data
+			if method == 'post': kwz['data'] = data
+			elif method == 'put':
+				# Force chunked encoding, as uploads hang otherwise
+				# See https://github.com/mk-fg/python-onedrive/issues/30 for details
+				data.seek(0)
+				kwz['data'] = iter(ft.partial(data.read, 200 * 2**10), b'')
 			else:
 				kwz['data'] = json.dumps(data)
 				headers = headers.copy()
@@ -92,7 +97,7 @@ class OneDriveHTTPClient(object):
 			# requests-2+ doesn't seem to add default content-type header
 			for k, file_tuple in files.iteritems():
 				if len(file_tuple) == 2: files[k] = tuple(file_tuple) + ('application/octet-stream',)
-				# rewind is necessary because request can be repeated due to auth failure
+				# Rewind is necessary because request can be repeated due to auth failure
 				file_tuple[1].seek(0)
 			kwz['files'] = files
 		if headers is not None: kwz['headers'] = headers
@@ -329,10 +334,6 @@ class OneDriveAPIWrapper(OneDriveAuth):
 			if src.tell() > bits_api_fallback:
 				return self.put_bits( path_or_tuple,
 					folder_id=folder_id, overwrite=overwrite, downsize=downsize )
-
-		# Force chunked encoding, as uploads hang otherwise
-		# See https://github.com/mk-fg/python-onedrive/issues/30 for details
-		if hasattr(src, 'read'): src = iter(ft.partial(src.read, 200 * 2**10), b'')
 
 		return self( ujoin(folder_id, 'files', name),
 			dict(downsize_photo_uploads=downsize, overwrite=overwrite),
