@@ -15,6 +15,9 @@
         Keywords to pass to "requests.adapters.HTTPAdapter" subclass
         init.
 
+        Only used with later versions of "requests" than 1.0.0 (where
+        adapters were introduced).
+
 
     * request(url, method='get', data=None, files=None, raw=False, headers={}, raise\_for={}, session=None)
 

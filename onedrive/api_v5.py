@@ -37,66 +37,29 @@ class OneDriveHTTPClient(object):
 	request_extra_keywords = None # Example: dict(timeout=(20.0, 10.0))
 
 	#: Keywords to pass to "requests.adapters.HTTPAdapter" subclass init.
+	#: Only used with later versions of "requests" than 1.0.0 (where adapters were introduced).
 	request_adapter_settings = None # Example: dict(max_retries=2)
 
-	def _requests_setup(self, requests, **adapter_kws):
-		'Workaround for TLSv1.2 issue with Microsoft livefilestore.com hosts.'
-		# IMPORTANT: test e.g. "./onedrive-cli --debug put setup.py" before removing TLS hacks.
+	_requests_setup_done = False
 
+	def _requests_setup(self, requests, **adapter_kws):
 		session, requests_version = None, requests.__version__
 		log.debug('Using "requests" module version: %r', requests_version)
+		try: requests_version = tuple(it.imap(int, requests_version.split('.')))
+		except: requests_version = 999, 0, 0 # most likely some future version
 
-		if requests_version in ['0.14.1', '0.14.2']:
-			# These versions can only be monkey-patched, unfortunately.
-			# See README and following related links for details:
-			#  https://github.com/mk-fg/python-onedrive/issues/1
-			#  https://github.com/kennethreitz/requests/pull/799
-			#  https://github.com/kennethreitz/requests/pull/900
-			#  https://github.com/kennethreitz/requests/issues/1083
-			#  https://github.com/shazow/urllib3/pull/109
-			try: from requests.packages.urllib3 import connectionpool as cp
-			except ImportError: from urllib3 import connectionpool as cp
-			socket, ssl, match_hostname = cp.socket, cp.ssl, cp.match_hostname
-			class VerifiedHTTPSConnection(cp.VerifiedHTTPSConnection):
-				def connect(self):
-					sock = socket.create_connection((self.host, self.port), self.timeout)
-					self.sock = ssl.wrap_socket( sock, self.key_file, self.cert_file,
-						cert_reqs=self.cert_reqs, ca_certs=self.ca_certs, ssl_version=ssl.PROTOCOL_TLSv1 )
-					if self.ca_certs: match_hostname(self.sock.getpeercert(), self.host)
-					cp.VerifiedHTTPSConnection = VerifiedHTTPSConnection
+		if requests_version >= (1, 0, 0):
+			session = requests.Session()
+			session.mount('https://', requests.adapters.HTTPAdapter(**adapter_kws))
 
-		else:
-			try: requests_version = tuple(it.imap(int, requests_version.split('.')))
-			except: requests_version = 999, 0, 0 # most likely some future version
+		elif requests_version < (0, 14, 0):
+			raise RuntimeError( (
+				'Version of the "requests" python module (used by python-onedrive)'
+					' is incompatible - need at least 0.14.0, but detected {}.'
+					' Please update it (or file an issue if it worked before).' )\
+				.format(requests.__version__) )
 
-			if requests_version > (1, 0, 0):
-				# Less hacks necessary - session HTTPAdapter can be used
-				try: from requests.packages.urllib3.poolmanager import PoolManager
-				except ImportError: from urllib3.poolmanager import PoolManager
-				from requests.adapters import HTTPAdapter
-				import ssl
-				_default_block = object()
-				class TLSv1Adapter(HTTPAdapter):
-					def init_poolmanager(self, connections, maxsize, block=_default_block):
-						pool_kw = dict()
-						if block is _default_block:
-							try: from requests.adapters import DEFAULT_POOLBLOCK # 1.2.1+
-							except ImportError: pass
-							else: pool_kw['block'] = DEFAULT_POOLBLOCK
-						self.poolmanager = PoolManager(
-							num_pools=connections, maxsize=maxsize,
-							ssl_version=ssl.PROTOCOL_TLSv1, **pool_kw )
-				session = requests.Session()
-				session.mount('https://', TLSv1Adapter(**adapter_kws))
-
-			elif requests_version < (0, 14, 0):
-				raise RuntimeError( (
-					'Version of the "requests" python module (used by python-onedrive)'
-						' is incompatible - need at least 0.14.0, but detected {}.'
-						' Please update it (or file an issue if it worked before).' )\
-					.format(requests.__version__) )
-
-		requests._onedrive_settings_applied = True
+		self._requests_setup_done = True
 		return session
 
 	def request( self, url, method='get', data=None, files=None,
@@ -105,7 +68,7 @@ class OneDriveHTTPClient(object):
 			Can be overidden to use different http module (e.g. urllib2, twisted, etc).'''
 		import requests # import here to avoid dependency on the module
 
-		if not getattr(requests, '_onedrive_settings_applied', False):
+		if not self._requests_setup_done:
 			# (hopefully) temporary fix for https://github.com/mk-fg/python-onedrive/issues/1
 			patched_session = self._requests_setup(
 				requests, **(self.request_adapter_settings or dict()) )
