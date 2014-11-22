@@ -129,11 +129,6 @@ Known Issues and Limitations
 	OneDrive API - see [#16](https://github.com/mk-fg/python-onedrive/issues/16)
 	for details.
 
-* apis.live.net host hangs after PUT (file upload) requests for 60s and resets
-	the connection, as described in [#30](https://github.com/mk-fg/python-onedrive/issues/30).
-
-	No idea whether there might be any workaround for this yet.
-
 * Be very careful using this module on Windows - it's very poorly tested there,
 	which is apparent from several serious issues that's been reported - see commit
 	d31fb51 and [this report](https://github.com/kennethreitz/requests/issues/2039),
@@ -314,6 +309,10 @@ available in file (object) metadata.
 There was an issue with public.bay.livefilestore.com hosts (to which actual file
 store/retrieve requests get redirected) not working with clients advertising
 TLS -1.2 (see issue-1 on github), but it seem to be gone by now (2014-11-21).
+
+File uploads can either use PUT or POST requests, but former (PUT) *must* use
+"Transfer-Encoding: chunked" or requests just hang and get closed by the server.
+For more info on this quirk, see github issue #30.
 
 Errors can be returned for most ops, encoded as JSON in responses and have a
 human-readable "code" (like "resource_quota_exceeded") and descriptive

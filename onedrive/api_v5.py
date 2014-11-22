@@ -330,6 +330,10 @@ class OneDriveAPIWrapper(OneDriveAuth):
 				return self.put_bits( path_or_tuple,
 					folder_id=folder_id, overwrite=overwrite, downsize=downsize )
 
+		# Force chunked encoding, as uploads hang otherwise
+		# See https://github.com/mk-fg/python-onedrive/issues/30 for details
+		if hasattr(src, 'read'): src = iter(ft.partial(src.read, 200 * 2**10), b'')
+
 		return self( ujoin(folder_id, 'files', name),
 			dict(downsize_photo_uploads=downsize, overwrite=overwrite),
 			data=src, method='put', auth_header=True )
