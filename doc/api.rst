@@ -1,6 +1,6 @@
 .. automodule:: onedrive.api_v5
     :exclude-members: OneDriveHTTPClient, OneDriveAuth,
-      OneDriveAPIWrapper, OneDriveAPI, PersistentOneDriveAPI
+      OneDriveAPIWrapper, OneDriveAPI, PersistentOneDriveAPI, BITSFragment
 
     .. autoclass:: OneDriveHTTPClient
     .. autoclass:: OneDriveAuth

@@ -6,7 +6,7 @@ import itertools as it, operator as op, functools as ft
 from datetime import datetime, timedelta
 from posixpath import join as ujoin # used for url pahs
 from os.path import join, basename
-import os, sys, urllib, urlparse, json, types
+import os, sys, io, urllib, urlparse, json, types, re
 
 from onedrive.conf import ConfigMixin
 
@@ -27,6 +27,29 @@ class AuthenticationError(OneDriveInteractionError): pass
 
 class DoesNotExists(OneDriveInteractionError):
 	'Only raised from OneDriveAPI.resolve_path().'
+
+
+class BITSFragment(object):
+
+	bs = 1 * 2**20
+
+	def __init__(self, src, frag_len):
+		self.src, self.pos, self.frag_len = src, src.tell(), frag_len
+		self.pos_max = self.pos + self.frag_len
+
+	def fileno(self): return self.src.fileno()
+
+	def seek(self, pos, flags=0):
+		assert pos < self.frag_len and flags == 0, [pos, flags]
+		self.src.seek(self.pos + pos)
+
+	def read(self, bs=None):
+		bs = min(bs, self.pos_max - self.src.tell())\
+			if bs is not None else (self.pos_max - self.src.tell())
+		return self.src.read(bs)
+
+	def __iter__(self):
+		return iter(ft.partial(self.read, self.bs), b'')
 
 
 class OneDriveHTTPClient(object):
@@ -63,7 +86,8 @@ class OneDriveHTTPClient(object):
 		return session
 
 	def request( self, url, method='get', data=None, files=None,
-				raw=False, headers=dict(), raise_for=dict(), session=None ):
+				raw=False, headers=dict(), raise_for=dict(), session=None,
+				return_headers=False ):
 		'''Make synchronous HTTP request.
 			Can be overidden to use different http module (e.g. urllib2, twisted, etc).'''
 		import requests # import here to avoid dependency on the module
@@ -83,12 +107,13 @@ class OneDriveHTTPClient(object):
 		kwz, func = dict(), ft.partial(
 			session.request, method.upper(), **(self.request_extra_keywords or dict()) )
 		if data is not None:
-			if method == 'post': kwz['data'] = data
-			elif method == 'put':
-				# Force chunked encoding, as uploads hang otherwise
-				# See https://github.com/mk-fg/python-onedrive/issues/30 for details
-				data.seek(0)
-				kwz['data'] = iter(ft.partial(data.read, 200 * 2**10), b'')
+			if method in ['post', 'put']:
+				if all(hasattr(data, k) for k in ['seek', 'read']):
+					# Force chunked encoding for files, as uploads hang otherwise
+					# See https://github.com/mk-fg/python-onedrive/issues/30 for details
+					data.seek(0)
+					kwz['data'] = iter(ft.partial(data.read, 200 * 2**10), b'')
+				else: kwz['data'] = data
 			else:
 				kwz['data'] = json.dumps(data)
 				headers = headers.copy()
@@ -109,7 +134,6 @@ class OneDriveHTTPClient(object):
 			code = res.status_code
 			if code == requests.codes.no_content: return
 			if code != requests.codes.ok: res.raise_for_status()
-			return json.loads(res.text) if not raw else res.content
 		except requests.RequestException as err:
 			message = str(err)
 			if res and getattr(res, 'text', None):
@@ -118,6 +142,10 @@ class OneDriveHTTPClient(object):
 				except: message = '{}: {!r}'.format(str(err), message)[:300]
 				else: message = '{}: {}'.format(message.pop('error', err), message)
 			raise raise_for.get(code, ProtocolError)(code, message)
+		if raw: res = res.content
+		elif return_headers: res = code, dict(res.headers.items())
+		else: res = json.loads(res.text)
+		return res
 
 
 class OneDriveAuth(OneDriveHTTPClient):
@@ -222,7 +250,18 @@ class OneDriveAPIWrapper(OneDriveAuth):
 	#:  (uploads via several http requests) in the "put" method.
 	api_put_max_bytes = int(95e6)
 
-	def _api_url( self, path, query=dict(),
+	api_bits_url_by_id = (
+		'https://cid-{user_id}.users.storage.live.com/'
+			'users/0x{user_id}/items/{folder_id}/{filename}' )
+	api_bits_url_by_path = (
+		'https://cid-{user_id}.users.storage.live.com'
+			'/users/0x{user_id}/LiveFolders/{folder_path}/{filename}' )
+	api_bits_protocol_id = '{7df0354d-249b-430f-820d-3d2a9bef4931}'
+	api_bits_default_frag_bytes = 10 * 2**10 # XXX: very small for testing
+
+	_user_id = None # cached from get_user_id calls
+
+	def _api_url( self, path_or_url, query=dict(),
 			pass_access_token=True, pass_empty_values=False ):
 		query = query.copy()
 		if pass_access_token:
@@ -231,9 +270,21 @@ class OneDriveAPIWrapper(OneDriveAuth):
 			for k, v in query.viewitems():
 				if not v and v != 0:
 					raise AuthenticationError(
-						'Empty key {!r} for API call (path: {})'.format(k, path) )
-		return urlparse.urljoin(
-			self.api_url_base, '{}?{}'.format(path, urllib.urlencode(query)) )
+						'Empty key {!r} for API call (path/url: {})'.format(k, path_or_url) )
+		if re.search(r'^(https?|spdy):', path_or_url):
+			if '?' in path_or_url:
+				raise AuthenticationError('URL must not include query: {}'.format(path_or_url))
+			path_or_url = path_or_url + '?{}'.format(urllib.urlencode(query))
+		else:
+			path_or_url = urlparse.urljoin(
+				self.api_url_base, '{}?{}'.format(path_or_url, urllib.urlencode(query)) )
+		return path_or_url
+
+	def _process_upload_source(self, path_or_tuple):
+		name, src = (basename(path_or_tuple), open(path_or_tuple, 'rb'))\
+			if isinstance(path_or_tuple, types.StringTypes)\
+			else (path_or_tuple[0], path_or_tuple[1])
+		return name, src
 
 	def _translate_api_flag(self, val, name=None, special_vals=None):
 		if special_vals and val in special_vals: return val
@@ -278,7 +329,9 @@ class OneDriveAPIWrapper(OneDriveAuth):
 
 	def get_user_id(self):
 		'Returns "id" of a OneDrive user.'
-		return self.get_user_data()['id']
+		if self._user_id is None:
+			self._user_id = self.get_user_data()['id']
+		return self._user_id
 
 	def listdir(self, folder_id='me/skydrive', limit=None, offset=None):
 		'Get OneDrive object representing list of objects in a folder.'
@@ -295,10 +348,8 @@ class OneDriveAPIWrapper(OneDriveAuth):
 			See HTTP Range header (rfc2616) for possible byte_range formats,
 			Examples: "0-499" - byte offsets 0-499 (inclusive), "-500" - final 500 bytes.'''
 		kwz = dict()
-		if byte_range:
-			kwz['headers'] = dict(Range='bytes={}'.format(byte_range))
-		return self(ujoin(obj_id, 'content'), dict(download='true'),
-					raw=True, **kwz)
+		if byte_range: kwz['headers'] = dict(Range='bytes={}'.format(byte_range))
+		return self(ujoin(obj_id, 'content'), dict(download='true'), raw=True, **kwz)
 
 	def put( self, path_or_tuple, folder_id='me/skydrive',
 			overwrite=None, downsize=None, bits_api_fallback=True ):
@@ -322,10 +373,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
 				as a fallback threshold, passing False will force using single-request uploads.'''
 		overwrite = self._translate_api_flag(overwrite, 'overwrite', ['ChooseNewName'])
 		downsize = self._translate_api_flag(downsize, 'downsize')
-
-		name, src = (basename(path_or_tuple), open(path_or_tuple, 'rb'))\
-			if isinstance(path_or_tuple, types.StringTypes)\
-			else (path_or_tuple[0], path_or_tuple[1])
+		name, src = self._process_upload_source(path_or_tuple)
 
 		if not isinstance(bits_api_fallback, (int, float, long)):
 			bits_api_fallback = bool(bits_api_fallback)
@@ -333,20 +381,82 @@ class OneDriveAPIWrapper(OneDriveAuth):
 			if bits_api_fallback is True: bits_api_fallback = self.api_put_max_bytes
 			src.seek(0, os.SEEK_END)
 			if src.tell() > bits_api_fallback:
-				return self.put_bits( path_or_tuple,
-					folder_id=folder_id, overwrite=overwrite, downsize=downsize )
+				return self.put_bits(path_or_tuple, folder_id=folder_id) # XXX: overwrite/downsize
 
 		return self( ujoin(folder_id, 'files', name),
 			dict(downsize_photo_uploads=downsize, overwrite=overwrite),
 			data=src, method='put', auth_header=True )
 
-	def put_bits(self, path_or_tuple, folder_id='me/skydrive', overwrite=None, downsize=None):
+	def put_bits( self, path_or_tuple,
+			folder_id=None, folder_path=None, frag_bytes=None ):
 		'''Upload a file (object) using BITS API (via several http requests), possibly
 				overwriting (default behavior) a file with the same "name" attribute, if it exists.
-			Not implemented yet.'''
-		overwrite = self._translate_api_flag(overwrite, 'overwrite', ['ChooseNewName'])
-		downsize = self._translate_api_flag(downsize, 'downsize')
-		raise NotImplementedError
+
+			Unlike "put" method, uploads to "folder_path" (instead of folder_id) are
+				supported here. Either folder path or id can be specified, but not both.
+
+			Returns id of the uploaded file.'''
+		# XXX: overwrite/downsize supported here?
+		# overwrite = self._translate_api_flag(overwrite, 'overwrite', ['ChooseNewName'])
+		# downsize = self._translate_api_flag(downsize, 'downsize')
+		name, src = self._process_upload_source(path_or_tuple)
+
+		if folder_id is not None and folder_path is not None:
+			raise ValueError('Either "folder_id" or "folder_path" can be specified, but not both.')
+		if folder_id is None and folder_path is None: folder_id = 'me/skydrive'
+		if re.search(r'^me(/.*)$', folder_id): folder_id = self.info(folder_id)['id']
+		if frag_bytes is None: frag_bytes = self.api_bits_default_frag_bytes
+
+		url = self.api_bits_url_by_id if folder_id else self.api_bits_url_by_path
+		url = url.format(
+			folder_id=folder_id, folder_path=folder_path,
+			user_id=self.get_user_id(), filename=name )
+
+		code, headers = self(
+			url, method='post', auth_header=True, return_headers=True,
+			headers={
+				'X-Http-Method-Override': 'BITS_POST',
+				'BITS-Packet-Type': 'Create-Session',
+				'BITS-Supported-Protocols': self.api_bits_protocol_id })
+		h = lambda k,hs=dict((k.lower(), v) for k,v in headers.viewitems()): hs.get(k, '')
+
+		if not (
+				code == 201
+				and h('bits-protocol').lower() == self.api_bits_protocol_id.lower()
+				and h('bits-packet-type').lower() == 'ack' ):
+			raise ProtocolError('Invalid BITS Create-Session response', code, headers)
+		bits_sid = headers['bits-session-id']
+
+		src.seek(0, os.SEEK_END)
+		c, src_len = 0, src.tell()
+		src.seek(0)
+		while c < src_len:
+			frag = BITSFragment(src, frag_bytes)
+			c1 = c + frag_bytes
+			self(
+				url, method='post', raw=True, data=frag,
+				headers={
+					'X-Http-Method-Override': 'BITS_POST',
+					'BITS-Packet-Type': 'Fragment',
+					'BITS-Session-Id': bits_sid,
+					'Content-Range': 'bytes {}-{}/{}'.format(c, min(c1, src_len), src_len) })
+			c = c1
+
+		code, headers = self(
+			url, method='post', auth_header=True, return_headers=True,
+			headers={
+				'X-Http-Method-Override': 'BITS_POST',
+				'BITS-Packet-Type': 'Close-Session',
+				'BITS-Session-Id': bits_sid })
+		h = lambda k,hs=dict((k.lower(), v) for k,v in headers.viewitems()): hs.get(k, '')
+		if not (
+				code == 201
+				and h('bits-session-id') == bits_sid
+				and h('bits-packet-type').lower() == 'ack'
+				and int(h('bits-received-content-range') or 0) == src_len ):
+			raise ProtocolError('Invalid BITS Close-Session response', code, headers)
+
+		return h('x-resource-id')
 
 	def mkdir(self, name=None, folder_id='me/skydrive', metadata=dict()):
 		'''Create a folder with a specified "name" attribute.

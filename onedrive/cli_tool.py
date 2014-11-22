@@ -173,6 +173,9 @@ def main():
 		help='Do not overwrite existing files with the same "name" attribute (visible name).')
 	cmd.add_argument('-d', '--no-downsize', action='store_true',
 		help='Disable automatic downsizing when uploading a photo.')
+	cmd.add_argument('-b', '--bits', action='store_true',
+		help='Force usage of BITS API (uploads via multiple http requests).'
+			' Default is to only fallback to it for large files.')
 
 	cmd = add_command('cp', help='Copy file to a folder.')
 	cmd.add_argument('file', help='File (object) to copy.')
@@ -312,6 +315,7 @@ def main():
 
 	elif optz.call == 'put':
 		xres = api.put( optz.file, resolve_path(optz.folder),
+			bits_api_fallback=0 if optz.bits else True, # 0 = "always use BITS"
 			overwrite=not optz.no_overwrite, downsize=not optz.no_downsize )
 
 	elif optz.call in ['cp', 'mv']:

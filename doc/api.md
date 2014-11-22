@@ -19,7 +19,7 @@
         adapters were introduced).
 
 
-    * request(url, method='get', data=None, files=None, raw=False, headers={}, raise\_for={}, session=None)
+    * request(url, method='get', data=None, files=None, raw=False, headers={}, raise\_for={}, session=None, return\_headers=False)
 
         Make synchronous HTTP request.
 
@@ -130,6 +130,14 @@
         Used to opportunistically fallback to BITS API (uploads via
         several http requests) in the "put" method.
 
+    * api\_bits\_url\_by\_id = 'https://cid-{user_id}.users.storage.live.com/users/0x{user_id}/items/{folder_id}/{filename}'
+
+    * api\_bits\_url\_by\_path = 'https://cid-{user_id}.users.storage.live.com/users/0x{user_id}/LiveFolders/{folder_path}/{filename}'
+
+    * api\_bits\_protocol\_id = '{7df0354d-249b-430f-820d-3d2a9bef4931}'
+
+    * api\_bits\_default\_frag\_bytes = 10240
+
 
     * \_\_call\_\_(url='me/skydrive', query={}, query\_filter=True, auth\_header=False, auto\_refresh\_token=True, \*\*request\_kwz)
 
@@ -203,13 +211,17 @@
         False will force using single-request uploads.
 
 
-    * put\_bits(path\_or\_tuple, folder\_id='me/skydrive', overwrite=None, downsize=None)
+    * put\_bits(path\_or\_tuple, folder\_id=None, folder\_path=None, frag\_bytes=None)
 
         Upload a file (object) using BITS API (via several http
         requests), possibly overwriting (default behavior) a file with
         the same "name" attribute, if it exists.
 
-        Not implemented yet.
+        Unlike "put" method, uploads to "folder_path" (instead of
+        folder_id) are supported here. Either folder path or id can be
+        specified, but not both.
+
+        Returns id of the uploaded file.
 
 
     * mkdir(name=None, folder\_id='me/skydrive', metadata={})
