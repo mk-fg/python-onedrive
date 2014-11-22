@@ -101,6 +101,7 @@ class OneDriveHTTPClient(object):
 				file_tuple[1].seek(0)
 			kwz['files'] = files
 		if headers is not None: kwz['headers'] = headers
+
 		code = res = None
 		try:
 			res = func(url, **kwz)
