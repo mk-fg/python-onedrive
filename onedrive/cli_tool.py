@@ -283,7 +283,9 @@ def main():
 					'--range argument must be in the "[offset]-[limit]"'
 						' or just "limit" format, with integers as both offset and'
 						' limit (if not omitted). Provided: {}'.format(optz.range) )
-		res = list(api.listdir(resolve_path(optz.folder), offset=offset, limit=limit))
+		res = sorted(
+			api.listdir(resolve_path(optz.folder), offset=offset, limit=limit),
+			key=op.itemgetter('name') )
 		if not optz.objects: res = map(op.itemgetter('name'), res)
 
 	elif optz.call == 'info':
