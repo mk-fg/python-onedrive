@@ -19,7 +19,7 @@
         adapters were introduced).
 
 
-    * request(url, method='get', data=None, files=None, raw=False, headers={}, raise\_for={}, session=None, return\_headers=False)
+    * request(url, method='get', data=None, files=None, raw=False, raw\_all=False, headers={}, raise\_for={}, session=None)
 
         Make synchronous HTTP request.
 
@@ -136,7 +136,7 @@
 
     * api\_bits\_protocol\_id = '{7df0354d-249b-430f-820d-3d2a9bef4931}'
 
-    * api\_bits\_default\_frag\_bytes = 10240
+    * api\_bits\_default\_frag\_bytes = 10485760
 
 
     * \_\_call\_\_(url='me/skydrive', query={}, query\_filter=True, auth\_header=False, auto\_refresh\_token=True, \*\*request\_kwz)
@@ -358,17 +358,28 @@
     Bases: "exceptions.Exception"
 
 
-* **exception onedrive.api\_v5.ProtocolError(code, msg)**
+* **exception onedrive.api\_v5.ProtocolError(code, msg, \*args)**
 
     Bases: "onedrive.api\_v5.OneDriveInteractionError"
 
 
-    * \_\_init\_\_(code, msg)
+    * \_\_init\_\_(code, msg, \*args)
 
 
 * **exception onedrive.api\_v5.AuthenticationError**
 
     Bases: "onedrive.api\_v5.OneDriveInteractionError"
+
+
+* **exception onedrive.api\_v5.NoAPISupportError**
+
+    Bases: "onedrive.api\_v5.OneDriveInteractionError"
+
+    Request operation is known to be not supported by the OneDrive API.
+
+    Can be raised on e.g. fallback from regular upload to BITS API due
+    to file size limitations, where flags like "overwrite" are not
+    supported (always on).
 
 
 * **exception onedrive.api\_v5.DoesNotExists**

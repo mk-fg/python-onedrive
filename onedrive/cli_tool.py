@@ -175,7 +175,11 @@ def main():
 		help='Disable automatic downsizing when uploading a photo.')
 	cmd.add_argument('-b', '--bits', action='store_true',
 		help='Force usage of BITS API (uploads via multiple http requests).'
-			' Default is to only fallback to it for large files.')
+			' Default is to only fallback to it for large (wrt API limits) files.')
+	cmd.add_argument('--bits-frag-bytes',
+		type=int, metavar='number',
+		default=api_v5.PersistentOneDriveAPI.api_bits_default_frag_bytes,
+		help='Fragment size for using BITS API (if used), in bytes. Default: %(default)s')
 
 	cmd = add_command('cp', help='Copy file to a folder.')
 	cmd.add_argument('file', help='File (object) to copy.')
@@ -314,9 +318,17 @@ def main():
 			sys.stdout.flush()
 
 	elif optz.call == 'put':
-		xres = api.put( optz.file, resolve_path(optz.folder),
-			bits_api_fallback=0 if optz.bits else True, # 0 = "always use BITS"
-			overwrite=not optz.no_overwrite, downsize=not optz.no_downsize )
+		dst = optz.folder
+		if optz.bits_frag_bytes > 0: api.api_bits_default_frag_bytes = optz.bits_frag_bytes
+		if optz.bits: # special-cased only because of folder-id's not working there
+			if optz.id or (not optz.path and id_match(dst)):
+				log.warn('Provided destination seem to be a folder-id,'
+					' that might not work with BITS API due to its experimental status')
+			else: dst, xres = None, api.put_bits(optz.file, folder_path=dst)
+		if dst is not None:
+			xres = api.put( optz.file, resolve_path(dst),
+				bits_api_fallback=0 if optz.bits else True, # 0 = "always use BITS"
+				overwrite=not optz.no_overwrite, downsize=not optz.no_downsize )
 
 	elif optz.call in ['cp', 'mv']:
 		argz = map(resolve_path, [optz.file, optz.folder])

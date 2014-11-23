@@ -19,11 +19,17 @@ class OneDriveInteractionError(Exception): pass
 
 class ProtocolError(OneDriveInteractionError):
 
-	def __init__(self, code, msg):
-		super(ProtocolError, self).__init__(code, msg)
+	def __init__(self, code, msg, *args):
+		assert isinstance(code, (int, types.NoneType)), code
+		super(ProtocolError, self).__init__(code, msg, *args)
 		self.code = code
 
 class AuthenticationError(OneDriveInteractionError): pass
+
+class NoAPISupportError(OneDriveInteractionError):
+	'''Request operation is known to be not supported by the OneDrive API.
+		Can be raised on e.g. fallback from regular upload to BITS API due to
+			file size limitations, where flags like "overwrite" are not supported (always on).'''
 
 class DoesNotExists(OneDriveInteractionError):
 	'Only raised from OneDriveAPI.resolve_path().'
@@ -86,8 +92,7 @@ class OneDriveHTTPClient(object):
 		return session
 
 	def request( self, url, method='get', data=None, files=None,
-				raw=False, headers=dict(), raise_for=dict(), session=None,
-				return_headers=False ):
+				raw=False, raw_all=False, headers=dict(), raise_for=dict(), session=None ):
 		'''Make synchronous HTTP request.
 			Can be overidden to use different http module (e.g. urllib2, twisted, etc).'''
 		import requests # import here to avoid dependency on the module
@@ -143,7 +148,7 @@ class OneDriveHTTPClient(object):
 				else: message = '{}: {}'.format(message.pop('error', err), message)
 			raise raise_for.get(code, ProtocolError)(code, message)
 		if raw: res = res.content
-		elif return_headers: res = code, dict(res.headers.items())
+		elif raw_all: res = code, dict(res.headers.items()), res.content
 		else: res = json.loads(res.text)
 		return res
 
@@ -257,7 +262,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
 		'https://cid-{user_id}.users.storage.live.com'
 			'/users/0x{user_id}/LiveFolders/{folder_path}/{filename}' )
 	api_bits_protocol_id = '{7df0354d-249b-430f-820d-3d2a9bef4931}'
-	api_bits_default_frag_bytes = 10 * 2**10 # XXX: very small for testing
+	api_bits_default_frag_bytes = 10 * 2**20 # 10 MiB
 
 	_user_id = None # cached from get_user_id calls
 
@@ -371,8 +376,8 @@ class OneDriveAPIWrapper(OneDriveAuth):
 				(as implemented by "put_bits" method) for large files. Default "True"
 				(bool) value will use non-BITS file size limit (api_put_max_bytes, ~100 MiB)
 				as a fallback threshold, passing False will force using single-request uploads.'''
-		overwrite = self._translate_api_flag(overwrite, 'overwrite', ['ChooseNewName'])
-		downsize = self._translate_api_flag(downsize, 'downsize')
+		api_overwrite = self._translate_api_flag(overwrite, 'overwrite', ['ChooseNewName'])
+		api_downsize = self._translate_api_flag(downsize, 'downsize')
 		name, src = self._process_upload_source(path_or_tuple)
 
 		if not isinstance(bits_api_fallback, (int, float, long)):
@@ -381,10 +386,19 @@ class OneDriveAPIWrapper(OneDriveAuth):
 			if bits_api_fallback is True: bits_api_fallback = self.api_put_max_bytes
 			src.seek(0, os.SEEK_END)
 			if src.tell() > bits_api_fallback:
+				log.info(
+					'Falling-back to using BITS API due to file size (%.1f MiB > %.1f MiB)',
+					*((float(v) / 2**20) for v in [src.tell(), bits_api_fallback]) )
+				if overwrite is not None and api_overwrite != 'true':
+					raise NoAPISupportError( 'Passed "overwrite" flag (value: {!r})'
+						' is not supported by the BITS API (always "true" there)'.format(overwrite) )
+				if downsize is not None:
+					log.warn( 'Passed "downsize" flag (value: %r) will not'
+						' be used with BITS API, as it is not supported there', downsize )
 				return self.put_bits(path_or_tuple, folder_id=folder_id) # XXX: overwrite/downsize
 
 		return self( ujoin(folder_id, 'files', name),
-			dict(downsize_photo_uploads=downsize, overwrite=overwrite),
+			dict(overwrite=api_overwrite, downsize_photo_uploads=api_downsize),
 			data=src, method='put', auth_header=True )
 
 	def put_bits( self, path_or_tuple,
@@ -396,41 +410,42 @@ class OneDriveAPIWrapper(OneDriveAuth):
 				supported here. Either folder path or id can be specified, but not both.
 
 			Returns id of the uploaded file.'''
-		# XXX: overwrite/downsize supported here?
-		# overwrite = self._translate_api_flag(overwrite, 'overwrite', ['ChooseNewName'])
-		# downsize = self._translate_api_flag(downsize, 'downsize')
+		# XXX: overwrite/downsize are not documented here yet
 		name, src = self._process_upload_source(path_or_tuple)
 
 		if folder_id is not None and folder_path is not None:
 			raise ValueError('Either "folder_id" or "folder_path" can be specified, but not both.')
 		if folder_id is None and folder_path is None: folder_id = 'me/skydrive'
-		if re.search(r'^me(/.*)$', folder_id): folder_id = self.info(folder_id)['id']
-		if frag_bytes is None: frag_bytes = self.api_bits_default_frag_bytes
+		if folder_id and re.search(r'^me(/.*)$', folder_id): folder_id = self.info(folder_id)['id']
+		if not frag_bytes: frag_bytes = self.api_bits_default_frag_bytes
 
 		url = self.api_bits_url_by_id if folder_id else self.api_bits_url_by_path
 		url = url.format(
 			folder_id=folder_id, folder_path=folder_path,
 			user_id=self.get_user_id(), filename=name )
 
-		code, headers = self(
-			url, method='post', auth_header=True, return_headers=True,
+		code, headers, body = self(
+			url, method='post', auth_header=True, raw_all=True,
 			headers={
 				'X-Http-Method-Override': 'BITS_POST',
 				'BITS-Packet-Type': 'Create-Session',
 				'BITS-Supported-Protocols': self.api_bits_protocol_id })
 		h = lambda k,hs=dict((k.lower(), v) for k,v in headers.viewitems()): hs.get(k, '')
-
-		if not (
-				code == 201
-				and h('bits-protocol').lower() == self.api_bits_protocol_id.lower()
-				and h('bits-packet-type').lower() == 'ack' ):
-			raise ProtocolError('Invalid BITS Create-Session response', code, headers)
+		checks = [ code == 201,
+			h('bits-packet-type').lower() == 'ack',
+			h('bits-protocol').lower() == self.api_bits_protocol_id.lower() ]
+		if not all(checks):
+			raise ProtocolError(code, 'Invalid BITS Create-Session response', headers, body, checks)
 		bits_sid = headers['bits-session-id']
 
 		src.seek(0, os.SEEK_END)
 		c, src_len = 0, src.tell()
+		cn = src_len / frag_bytes
+		if c * cn != src_len: cn += 1
 		src.seek(0)
-		while c < src_len:
+		for n in xrange(1, cn+1):
+			log.debug( 'Uploading BITS fragment'
+				' %s / %s (max-size: %.2f MiB)', n, cn, frag_bytes / float(2**20) )
 			frag = BITSFragment(src, frag_bytes)
 			c1 = c + frag_bytes
 			self(
@@ -439,22 +454,21 @@ class OneDriveAPIWrapper(OneDriveAuth):
 					'X-Http-Method-Override': 'BITS_POST',
 					'BITS-Packet-Type': 'Fragment',
 					'BITS-Session-Id': bits_sid,
-					'Content-Range': 'bytes {}-{}/{}'.format(c, min(c1, src_len), src_len) })
+					'Content-Range': 'bytes {}-{}/{}'.format(c, min(c1, src_len)-1, src_len) })
 			c = c1
 
-		code, headers = self(
-			url, method='post', auth_header=True, return_headers=True,
+		code, headers, body = self(
+			url, method='post', auth_header=True, raw_all=True,
 			headers={
 				'X-Http-Method-Override': 'BITS_POST',
 				'BITS-Packet-Type': 'Close-Session',
 				'BITS-Session-Id': bits_sid })
 		h = lambda k,hs=dict((k.lower(), v) for k,v in headers.viewitems()): hs.get(k, '')
-		if not (
-				code == 201
-				and h('bits-session-id') == bits_sid
-				and h('bits-packet-type').lower() == 'ack'
-				and int(h('bits-received-content-range') or 0) == src_len ):
-			raise ProtocolError('Invalid BITS Close-Session response', code, headers)
+		checks = [code in [200, 201], h('bits-packet-type').lower() == 'ack' ]
+			# int(h('bits-received-content-range') or 0) == src_len -- not passed atm
+			# h('bits-session-id') == bits_sid -- not passed atm
+		if not all(checks):
+			raise ProtocolError(code, 'Invalid BITS Close-Session response', headers, body, checks)
 
 		return h('x-resource-id')
 

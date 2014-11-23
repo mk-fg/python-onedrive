@@ -125,9 +125,13 @@ If you get HTTP error 400 right after or during "auth" command, read
 Known Issues and Limitations
 ----------------------------------------
 
-* Uploading of files larger than ~100 MiB is apparently not supported by
-	OneDrive API - see [#16](https://github.com/mk-fg/python-onedrive/issues/16)
-	for details.
+* Uploading of files larger than ~100 MiB via single POST/PUT request is
+	apparently not supported by OneDrive API - see
+	[#16](https://github.com/mk-fg/python-onedrive/issues/16) for details.
+
+	Workaround in place is to fallback to (experimental at the moment of writing - 2014-11-23)
+	[BITS API](https://gist.github.com/rgregg/37ba8929768a62131e85) for larger files,
+	but it has a few issues, documented in [#34](https://github.com/mk-fg/python-onedrive/issues/34).
 
 * Be very careful using this module on Windows - it's very poorly tested there,
 	which is apparent from several serious issues that's been reported - see commit
