@@ -324,7 +324,7 @@ def main():
 			if optz.id or (not optz.path and id_match(dst)):
 				log.info('Provided destination seem to be a folder-id,'
 					' that might not work with BITS API properly due to its experimental status')
-			else: dst, xres = None, api.put_bits(optz.file, folder_path=dst)
+			else: dst, xres = None, api.info(api.put_bits(optz.file, folder_path=dst))
 		if dst is not None:
 			xres = api.put( optz.file, resolve_path(dst),
 				bits_api_fallback=0 if optz.bits else True, # 0 = "always use BITS"

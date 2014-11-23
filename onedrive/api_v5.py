@@ -395,7 +395,8 @@ class OneDriveAPIWrapper(OneDriveAuth):
 				if downsize is not None:
 					log.warn( 'Passed "downsize" flag (value: %r) will not'
 						' be used with BITS API, as it is not supported there', downsize )
-				return self.put_bits(path_or_tuple, folder_id=folder_id) # XXX: overwrite/downsize
+				file_id = self.put_bits(path_or_tuple, folder_id=folder_id) # XXX: overwrite/downsize
+				return self.info(file_id)
 
 		return self( ujoin(folder_id, 'files', name),
 			dict(overwrite=api_overwrite, downsize_photo_uploads=api_downsize),
