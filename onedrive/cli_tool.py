@@ -320,10 +320,10 @@ def main():
 	elif optz.call == 'put':
 		dst = optz.folder
 		if optz.bits_frag_bytes > 0: api.api_bits_default_frag_bytes = optz.bits_frag_bytes
-		if optz.bits: # special-cased only because of folder-id's not working there
+		if optz.bits: # XXX: special-cased only because of folder-id's are not working there (yet?)
 			if optz.id or (not optz.path and id_match(dst)):
-				log.warn('Provided destination seem to be a folder-id,'
-					' that might not work with BITS API due to its experimental status')
+				log.info('Provided destination seem to be a folder-id,'
+					' that might not work with BITS API properly due to its experimental status')
 			else: dst, xres = None, api.put_bits(optz.file, folder_path=dst)
 		if dst is not None:
 			xres = api.put( optz.file, resolve_path(dst),

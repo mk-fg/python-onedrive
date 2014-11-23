@@ -211,7 +211,7 @@
         False will force using single-request uploads.
 
 
-    * put\_bits(path\_or\_tuple, folder\_id=None, folder\_path=None, frag\_bytes=None)
+    * put\_bits(path\_or\_tuple, folder\_id=None, folder\_path=None, frag\_bytes=None, raw\_id=False)
 
         Upload a file (object) using BITS API (via several http
         requests), possibly overwriting (default behavior) a file with
@@ -221,7 +221,9 @@
         folder_id) are supported here. Either folder path or id can be
         specified, but not both.
 
-        Returns id of the uploaded file.
+        Returns id of the uploaded file, as retured by the API if
+        raw_id=True is passed, otherwise in a consistent (with other
+        calls) "file.{user_id}.{file_id}" format (default).
 
 
     * mkdir(name=None, folder\_id='me/skydrive', metadata={})

@@ -402,15 +402,17 @@ class OneDriveAPIWrapper(OneDriveAuth):
 			data=src, method='put', auth_header=True )
 
 	def put_bits( self, path_or_tuple,
-			folder_id=None, folder_path=None, frag_bytes=None ):
+			folder_id=None, folder_path=None, frag_bytes=None, raw_id=False ):
 		'''Upload a file (object) using BITS API (via several http requests), possibly
 				overwriting (default behavior) a file with the same "name" attribute, if it exists.
 
 			Unlike "put" method, uploads to "folder_path" (instead of folder_id) are
 				supported here. Either folder path or id can be specified, but not both.
 
-			Returns id of the uploaded file.'''
-		# XXX: overwrite/downsize are not documented here yet
+			Returns id of the uploaded file, as retured by the API
+				if raw_id=True is passed, otherwise in a consistent (with other calls)
+				"file.{user_id}.{file_id}" format (default).'''
+		# XXX: overwrite/downsize are not documented/supported here yet
 		name, src = self._process_upload_source(path_or_tuple)
 
 		if folder_id is not None and folder_path is not None:
@@ -419,17 +421,39 @@ class OneDriveAPIWrapper(OneDriveAuth):
 		if folder_id and re.search(r'^me(/.*)$', folder_id): folder_id = self.info(folder_id)['id']
 		if not frag_bytes: frag_bytes = self.api_bits_default_frag_bytes
 
-		url = self.api_bits_url_by_id if folder_id else self.api_bits_url_by_path
-		url = url.format(
-			folder_id=folder_id, folder_path=folder_path,
-			user_id=self.get_user_id(), filename=name )
+		user_id = self.get_user_id()
+		get_url = lambda:\
+			(self.api_bits_url_by_id if folder_id else self.api_bits_url_by_path).format(
+				folder_id=folder_id, folder_path=folder_path, user_id=user_id, filename=name )
 
-		code, headers, body = self(
-			url, method='post', auth_header=True, raw_all=True,
-			headers={
-				'X-Http-Method-Override': 'BITS_POST',
-				'BITS-Packet-Type': 'Create-Session',
-				'BITS-Supported-Protocols': self.api_bits_protocol_id })
+		for n in xrange(2):
+			url = get_url()
+			try:
+				code, headers, body = self(
+					url, method='post', auth_header=True, raw_all=True,
+					raise_for={404: NoAPISupportError},
+					headers={
+						'X-Http-Method-Override': 'BITS_POST',
+						'BITS-Packet-Type': 'Create-Session',
+						'BITS-Supported-Protocols': self.api_bits_protocol_id })
+			except NoAPISupportError as err:
+				if not folder_id: raise ProtocolError(err.code, *err.args)
+				else: # XXX: workaround for http-404 on folder-id uploads, should be fixed
+					log.info('Assuming that BITS API does not support folder_id'
+						' uploads, falling back to manual folder_id -> folder_path conversion')
+					folder_path, folder_id_orig = list(), folder_id
+					for n in xrange(100): # depth limit to prevent inf-loop
+						info = self.info(folder_id)
+						folder_id = info['parent_id']
+						if not folder_id: break
+						folder_path.append(info['name'])
+					else:
+						raise OneDriveInteractionError(
+							'Path recursion depth exceeded', folder_id_orig, folder_path )
+					folder_id, folder_path = None, ujoin(*reversed(folder_path))
+					log.debug('Resolved folder_id %r into path: %r', folder_id_orig, folder_path)
+			else: break
+
 		h = lambda k,hs=dict((k.lower(), v) for k,v in headers.viewitems()): hs.get(k, '')
 		checks = [ code == 201,
 			h('bits-packet-type').lower() == 'ack',
@@ -465,12 +489,15 @@ class OneDriveAPIWrapper(OneDriveAuth):
 				'BITS-Session-Id': bits_sid })
 		h = lambda k,hs=dict((k.lower(), v) for k,v in headers.viewitems()): hs.get(k, '')
 		checks = [code in [200, 201], h('bits-packet-type').lower() == 'ack' ]
-			# int(h('bits-received-content-range') or 0) == src_len -- not passed atm
-			# h('bits-session-id') == bits_sid -- not passed atm
+			# int(h('bits-received-content-range') or 0) == src_len -- documented, but missing
+			# h('bits-session-id') == bits_sid -- documented, but missing
 		if not all(checks):
 			raise ProtocolError(code, 'Invalid BITS Close-Session response', headers, body, checks)
 
-		return h('x-resource-id')
+		# XXX: workaround for API-ids inconsistency
+		file_id = h('x-resource-id')
+		if not raw_id: file_id = 'file.{}.{}'.format(user_id, file_id)
+		return file_id
 
 	def mkdir(self, name=None, folder_id='me/skydrive', metadata=dict()):
 		'''Create a folder with a specified "name" attribute.
