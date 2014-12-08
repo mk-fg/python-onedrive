@@ -154,13 +154,13 @@ Known Issues and Limitations
 	[SharePoint 2013 API](http://msdn.microsoft.com/en-us/library/fp142380%28v=office.15%29.aspx).
 
 * Be very careful when relying on [BITS API](https://gist.github.com/rgregg/37ba8929768a62131e85),
-	as it seem to be in very experimental state for regular OneDrive service, with
+	as it seem to be in a very experimental state for regular OneDrive service, with
 	only info I've seen on it (in relation to OneDrive, and not other MS services)
-	being that linked gist file (actually pointed out to me by @bobobo1618 in #34).
+	being that linked gist (actually pointed out to me by @bobobo1618 in #34).
 
 	Some issues with it (at the moment of writing this - 2014-12-08) are mentioned
-	in [issue-34](https://github.com/mk-fg/python-onedrive/issues/34)
-	and [issue-39](https://github.com/mk-fg/python-onedrive/issues/39).
+	in [#34](https://github.com/mk-fg/python-onedrive/issues/34)
+	and [#39](https://github.com/mk-fg/python-onedrive/issues/39).
 
 
 Module usage
