@@ -241,9 +241,12 @@ without any installation, if that's the only thing you need there.
 * [Python 2.7 (not 3.X)](http://python.org/)
 
 * (unless your plan is to override that)
-	[requests](http://docs.python-requests.org/en/latest/) - versions 0.14.0 or
-	higher are strongly recommended - ideally 1.0.0+ (see "Known Issues" section
-	below for rationale)
+	[requests](http://docs.python-requests.org/en/latest/) - version 0.14.0 or
+	higher.
+
+	Should be installed automatically by pip if "[standalone]"
+	[extras-flag](https://pythonhosted.org/setuptools/setuptools.html#declaring-extras)
+	is specified, as suggested above.
 
 * (optional, recommended) [PyYAML](http://pyyaml.org) - required for CLI tool
 	and optional persistent-state ("conf") module only.
@@ -252,10 +255,13 @@ without any installation, if that's the only thing you need there.
 	CLI tool (used to lock configuration file on changes) and optional conf module
 	only.
 
-* (optional) [chardet](http://pypi.python.org/pypi/chardet) - used to detect
-	encoding (utf-8, gbk, koi8-r, etc) of the command-line arguments to support
-	workng with non-ascii (e.g. cyrillic, chinese) names, if it's not specified
-	explicitly.
+* (optional) [chardet](http://pypi.python.org/pypi/chardet) - only used to
+	detect encoding (utf-8, gbk, koi8-r, etc) of the command-line arguments to
+	support workng with non-ascii (e.g. cyrillic, chinese) names, if explicitly
+	requested.
+
+	Not needed unless you specifically use cli tool with "--encoding detect"
+	option, which is probably a bad idea in general anyway.
 
 
 
