@@ -114,6 +114,10 @@ def main():
 	cmd = add_command('auth', help='Perform user authentication.')
 	cmd.add_argument('url', nargs='?', help='URL with the authorization_code.')
 
+	add_command('auth_refresh',
+		help='Force-refresh OAuth2 access_token.'
+			' Should never be necessary under normal conditions.')
+
 	add_command('quota', help='Print quota information.')
 	add_command('user', help='Print user data.')
 	add_command('recent', help='List recently changed objects.')
@@ -262,6 +266,9 @@ def main():
 			api.auth_user_process_url(optz.url)
 			api.auth_get_token()
 			print('API authorization was completed successfully.')
+
+	elif optz.call == 'auth_refresh':
+		xres = dict(scope_granted=api.auth_get_token())
 
 	elif optz.call == 'quota':
 		df, ds = map(size_units, api.get_quota())
