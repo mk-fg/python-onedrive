@@ -466,7 +466,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
 		src.seek(0, os.SEEK_END)
 		c, src_len = 0, src.tell()
 		cn = src_len / frag_bytes
-		if c * cn != src_len: cn += 1
+		if frag_bytes * cn != src_len: cn += 1
 		src.seek(0)
 		for n in xrange(1, cn+1):
 			log.debug( 'Uploading BITS fragment'
