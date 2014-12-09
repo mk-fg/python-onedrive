@@ -12,7 +12,7 @@ except IOError: readme = ''
 setup(
 
 	name='python-onedrive',
-	version='14.12.3',
+	version='14.12.6',
 	author='Mike Kazantsev, Antonio Chen',
 	author_email='mk.fraggod@gmail.com',
 	license='WTFPL',
