@@ -173,10 +173,12 @@ def main():
 	cmd.add_argument('folder',
 		nargs='?', default='me/skydrive',
 		help='Folder to put file into (default: %(default)s).')
-	cmd.add_argument('-n', '--no-overwrite', action='store_true',
-		help='Do not overwrite existing files with the same "name" attribute (visible name).')
-	cmd.add_argument('-d', '--no-downsize', action='store_true',
-		help='Disable automatic downsizing when uploading a photo.')
+	cmd.add_argument('-n', '--no-overwrite', action='store_true', default=None,
+		help='Do not overwrite existing files with the same "name" attribute (visible name).'
+			' Default (and documented) API behavior is to overwrite such files.')
+	cmd.add_argument('-d', '--no-downsize', action='store_true', default=None,
+		help='Disable automatic downsizing when uploading a large image.'
+			' Default (and documented) API behavior is to downsize images.')
 	cmd.add_argument('-b', '--bits', action='store_true',
 		help='Force usage of BITS API (uploads via multiple http requests).'
 			' Default is to only fallback to it for large (wrt API limits) files.')
@@ -331,15 +333,10 @@ def main():
 	elif optz.call == 'put':
 		dst = optz.folder
 		if optz.bits_frag_bytes > 0: api.api_bits_default_frag_bytes = optz.bits_frag_bytes
-		if optz.bits: # XXX: special-cased only because of folder-id's are not working there (yet?)
-			if optz.id or (not optz.path and id_match(dst)):
-				log.info('Provided destination seem to be a folder-id,'
-					' that might not work with BITS API properly due to its experimental status')
-			else: dst, xres = None, api.info(api.put_bits(optz.file, folder_path=dst))
 		if dst is not None:
 			xres = api.put( optz.file, resolve_path(dst),
 				bits_api_fallback=0 if optz.bits else True, # 0 = "always use BITS"
-				overwrite=not optz.no_overwrite, downsize=not optz.no_downsize )
+				overwrite=optz.no_overwrite and False, downsize=optz.no_downsize and False )
 
 	elif optz.call in ['cp', 'mv']:
 		argz = map(resolve_path, [optz.file, optz.folder])

@@ -256,8 +256,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
 	api_put_max_bytes = int(95e6)
 
 	api_bits_url_by_id = (
-		'https://cid-{user_id}.users.storage.live.com/'
-			'users/0x{user_id}/items/{folder_id}/{filename}' )
+		'https://cid-{user_id}.users.storage.live.com/items/{folder_id}/{filename}' )
 	api_bits_url_by_path = (
 		'https://cid-{user_id}.users.storage.live.com'
 			'/users/0x{user_id}/LiveFolders/{folder_path}/{filename}' )
@@ -386,14 +385,15 @@ class OneDriveAPIWrapper(OneDriveAuth):
 			if bits_api_fallback is True: bits_api_fallback = self.api_put_max_bytes
 			src.seek(0, os.SEEK_END)
 			if src.tell() > bits_api_fallback:
-				log.info(
-					'Falling-back to using BITS API due to file size (%.1f MiB > %.1f MiB)',
-					*((float(v) / 2**20) for v in [src.tell(), bits_api_fallback]) )
+				if bits_api_fallback > 0: # not really a "fallback" in this case
+					log.info(
+						'Falling-back to using BITS API due to file size (%.1f MiB > %.1f MiB)',
+						*((float(v) / 2**20) for v in [src.tell(), bits_api_fallback]) )
 				if overwrite is not None and api_overwrite != 'true':
 					raise NoAPISupportError( 'Passed "overwrite" flag (value: {!r})'
 						' is not supported by the BITS API (always "true" there)'.format(overwrite) )
 				if downsize is not None:
-					log.warn( 'Passed "downsize" flag (value: %r) will not'
+					log.info( 'Passed "downsize" flag (value: %r) will not'
 						' be used with BITS API, as it is not supported there', downsize )
 				file_id = self.put_bits(path_or_tuple, folder_id=folder_id) # XXX: overwrite/downsize
 				return self.info(file_id)
@@ -413,7 +413,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
 			Returns id of the uploaded file, as retured by the API
 				if raw_id=True is passed, otherwise in a consistent (with other calls)
 				"file.{user_id}.{file_id}" format (default).'''
-		# XXX: overwrite/downsize are not documented/supported here yet
+		# XXX: overwrite/downsize are not documented/supported here (yet?)
 		name, src = self._process_upload_source(path_or_tuple)
 
 		if folder_id is not None and folder_path is not None:
@@ -423,37 +423,20 @@ class OneDriveAPIWrapper(OneDriveAuth):
 		if not frag_bytes: frag_bytes = self.api_bits_default_frag_bytes
 
 		user_id = self.get_user_id()
-		get_url = lambda:\
-			(self.api_bits_url_by_id if folder_id else self.api_bits_url_by_path).format(
-				folder_id=folder_id, folder_path=folder_path, user_id=user_id, filename=name )
+		if folder_id: # workaround for API-ids inconsistency between BITS and regular API
+			match = re.search(r'^(?i)folder.[a-f0-9]+.([a-f0-9]+!\d+)$', folder_id)
+			if not match:
+				raise ValueError('Failed to process folder_id for BITS API: {!r}'.format(folder_id))
+			folder_id = match.group(1)
+		url = (self.api_bits_url_by_id if folder_id else self.api_bits_url_by_path)\
+			.format(folder_id=folder_id, folder_path=folder_path, user_id=user_id, filename=name)
 
-		for n in xrange(2):
-			url = get_url()
-			try:
-				code, headers, body = self(
-					url, method='post', auth_header=True, raw_all=True,
-					raise_for={404: NoAPISupportError},
-					headers={
-						'X-Http-Method-Override': 'BITS_POST',
-						'BITS-Packet-Type': 'Create-Session',
-						'BITS-Supported-Protocols': self.api_bits_protocol_id })
-			except NoAPISupportError as err:
-				if not folder_id: raise ProtocolError(err.code, *err.args)
-				else: # XXX: workaround for http-404 on folder-id uploads, should be fixed
-					log.info('Assuming that BITS API does not support folder_id'
-						' uploads, falling back to manual folder_id -> folder_path conversion')
-					folder_path, folder_id_orig = list(), folder_id
-					for n in xrange(100): # depth limit to prevent inf-loop
-						info = self.info(folder_id)
-						folder_id = info['parent_id']
-						if not folder_id: break
-						folder_path.append(info['name'])
-					else:
-						raise OneDriveInteractionError(
-							'Path recursion depth exceeded', folder_id_orig, folder_path )
-					folder_id, folder_path = None, ujoin(*reversed(folder_path))
-					log.debug('Resolved folder_id %r into path: %r', folder_id_orig, folder_path)
-			else: break
+		code, headers, body = self(
+			url, method='post', auth_header=True, raw_all=True,
+			headers={
+				'X-Http-Method-Override': 'BITS_POST',
+				'BITS-Packet-Type': 'Create-Session',
+				'BITS-Supported-Protocols': self.api_bits_protocol_id })
 
 		h = lambda k,hs=dict((k.lower(), v) for k,v in headers.viewitems()): hs.get(k, '')
 		checks = [ code == 201,
@@ -495,7 +478,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
 		if not all(checks):
 			raise ProtocolError(code, 'Invalid BITS Close-Session response', headers, body, checks)
 
-		# XXX: workaround for API-ids inconsistency
+		# Workaround for API-ids inconsistency between BITS and regular API
 		file_id = h('x-resource-id')
 		if not raw_id: file_id = 'file.{}.{}'.format(user_id, file_id)
 		return file_id

@@ -130,7 +130,7 @@
         Used to opportunistically fallback to BITS API (uploads via
         several http requests) in the "put" method.
 
-    * api\_bits\_url\_by\_id = 'https://cid-{user_id}.users.storage.live.com/users/0x{user_id}/items/{folder_id}/{filename}'
+    * api\_bits\_url\_by\_id = 'https://cid-{user_id}.users.storage.live.com/items/{folder_id}/{filename}'
 
     * api\_bits\_url\_by\_path = 'https://cid-{user_id}.users.storage.live.com/users/0x{user_id}/LiveFolders/{folder_path}/{filename}'
 
