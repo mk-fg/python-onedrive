@@ -261,6 +261,8 @@ def main():
 				'Alternatively, use the returned (after redirects)'
 				' URL with "{} auth <URL>" command.\n'.format(sys.argv[0]) )
 			print('URL to visit: {}\n'.format(api.auth_user_get_url()))
+			try: import readline # for better compatibility with terminal quirks, see #40
+			except ImportError: pass
 			optz.url = raw_input('URL after last redirect: ').strip()
 		if optz.url:
 			api.auth_user_process_url(optz.url)
