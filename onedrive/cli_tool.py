@@ -11,14 +11,20 @@ import os, sys, io, re, types, json
 try: import chardet
 except ImportError: chardet = None # completely optional
 
-try: from onedrive import api_v5, conf
+try: import onedrive
 except ImportError:
-	# Make sure it works from a checkout
-	if isdir(join(dirname(__file__), 'onedrive'))\
-			and exists(join(dirname(__file__), 'setup.py')):
-		sys.path.insert(0, dirname(__file__))
-		from onedrive import api_v5, conf
-	else: import api_v5, conf
+	# Make sure tool works from a checkout
+	if __name__ != '__main__': raise
+	pkg_root = abspath(dirname(__file__))
+	for pkg_root in pkg_root, dirname(pkg_root):
+		if isdir(join(pkg_root, 'onedrive'))\
+				and exists(join(pkg_root, 'setup.py')):
+			sys.path.insert(0, dirname(__file__))
+			try: import onedrive
+			except ImportError: pass
+			else: break
+	else: raise ImportError('Failed to find/import "onedrive" module')
+from onedrive import api_v5, conf
 
 
 force_encoding = None
@@ -102,43 +108,41 @@ def main():
 				' chardet module, if available, falling back to utf-8 and terminal encoding for output.'
 			' Forced utf-8 is used by default, for consistency and due to its ubiquity.')
 
+	parser.add_argument('-V', '--version', action='version',
+		version='python-onedrive {}'.format(onedrive.__version__),
+		help='Print version number and exit.')
 	parser.add_argument('--debug', action='store_true', help='Verbose operation mode.')
 
-	cmds = parser.add_subparsers(title='Supported operations')
+	cmds = parser.add_subparsers(title='Supported operations', dest='call')
 
-	def add_command(name, **kwz):
-		cmd = cmds.add_parser(name, **kwz)
-		cmd.set_defaults(call=name)
-		return cmd
-
-	cmd = add_command('auth', help='Perform user authentication.')
+	cmd = cmds.add_parser('auth', help='Perform user authentication.')
 	cmd.add_argument('url', nargs='?', help='URL with the authorization_code.')
 
-	add_command('auth_refresh',
+	cmds.add_parser('auth_refresh',
 		help='Force-refresh OAuth2 access_token.'
 			' Should never be necessary under normal conditions.')
 
-	add_command('quota', help='Print quota information.')
-	add_command('user', help='Print user data.')
-	add_command('recent', help='List recently changed objects.')
+	cmds.add_parser('quota', help='Print quota information.')
+	cmds.add_parser('user', help='Print user data.')
+	cmds.add_parser('recent', help='List recently changed objects.')
 
-	cmd = add_command('info', help='Display object metadata.')
+	cmd = cmds.add_parser('info', help='Display object metadata.')
 	cmd.add_argument('object',
 		nargs='?', default='me/skydrive',
 		help='Object to get info on (default: %(default)s).')
 
-	cmd = add_command('info_set', help='Manipulate object metadata.')
+	cmd = cmds.add_parser('info_set', help='Manipulate object metadata.')
 	cmd.add_argument('object', help='Object to manipulate metadata for.')
 	cmd.add_argument('data',
 		help='JSON mapping of values to set (example: {"name": "new_file_name.jpg"}).')
 
-	cmd = add_command('link', help='Get a link to a file.')
+	cmd = cmds.add_parser('link', help='Get a link to a file.')
 	cmd.add_argument('object', help='Object to get link for.')
 	cmd.add_argument('-t', '--type', default='shared_read_link',
 		help='Type of link to request. Possible values'
 			' (default: %(default)s): shared_read_link, embed, shared_edit_link.')
 
-	cmd = add_command('ls', help='List folder contents.')
+	cmd = cmds.add_parser('ls', help='List folder contents.')
 	cmd.add_argument('folder',
 		nargs='?', default='me/skydrive',
 		help='Folder to list contents of (default: %(default)s).')
@@ -150,7 +154,7 @@ def main():
 	cmd.add_argument('-o', '--objects', action='store_true',
 		help='Dump full objects, not just name and id.')
 
-	cmd = add_command('mkdir', help='Create a folder.')
+	cmd = cmds.add_parser('mkdir', help='Create a folder.')
 	cmd.add_argument('name',
 		help='Name (or a path consisting of dirname + basename) of a folder to create.')
 	cmd.add_argument('folder',
@@ -160,7 +164,7 @@ def main():
 		help='JSON mappings of metadata to set for the created folder.'
 			' Optonal. Example: {"description": "Photos from last trip to Mordor"}')
 
-	cmd = add_command('get', help='Download file contents.')
+	cmd = cmds.add_parser('get', help='Download file contents.')
 	cmd.add_argument('file', help='File (object) to read.')
 	cmd.add_argument('file_dst', nargs='?', help='Name/path to save file (object) as.')
 	cmd.add_argument('-b', '--byte-range',
@@ -168,7 +172,7 @@ def main():
 			' Should be specified in rfc2616 Range HTTP header format.'
 			' Examples: 0-499 (start - 499), -500 (end-500 to end).')
 
-	cmd = add_command('put', help='Upload a file.')
+	cmd = cmds.add_parser('put', help='Upload a file.')
 	cmd.add_argument('file', help='Path to a local file to upload.')
 	cmd.add_argument('folder',
 		nargs='?', default='me/skydrive',
@@ -187,34 +191,34 @@ def main():
 		default=api_v5.PersistentOneDriveAPI.api_bits_default_frag_bytes,
 		help='Fragment size for using BITS API (if used), in bytes. Default: %(default)s')
 
-	cmd = add_command('cp', help='Copy file to a folder.')
+	cmd = cmds.add_parser('cp', help='Copy file to a folder.')
 	cmd.add_argument('file', help='File (object) to copy.')
 	cmd.add_argument('folder',
 		nargs='?', default='me/skydrive',
 		help='Folder to copy file to (default: %(default)s).')
 
-	cmd = add_command('mv', help='Move file to a folder.')
+	cmd = cmds.add_parser('mv', help='Move file to a folder.')
 	cmd.add_argument('file', help='File (object) to move.')
 	cmd.add_argument('folder',
 		nargs='?', default='me/skydrive',
 		help='Folder to move file to (default: %(default)s).')
 
-	cmd = add_command('rm', help='Remove object (file or folder).')
+	cmd = cmds.add_parser('rm', help='Remove object (file or folder).')
 	cmd.add_argument('object', nargs='+', help='Object(s) to remove.')
 
-	cmd = add_command('comments', help='Show comments for a file, object or folder.')
+	cmd = cmds.add_parser('comments', help='Show comments for a file, object or folder.')
 	cmd.add_argument('object', help='Object to show comments for.')
 
-	cmd = add_command('comment_add', help='Add comment for a file, object or folder.')
+	cmd = cmds.add_parser('comment_add', help='Add comment for a file, object or folder.')
 	cmd.add_argument('object', help='Object to add comment for.')
 	cmd.add_argument('message', help='Comment message to add.')
 
-	cmd = add_command('comment_delete', help='Delete comment from a file, object or folder.')
+	cmd = cmds.add_parser('comment_delete', help='Delete comment from a file, object or folder.')
 	cmd.add_argument('comment_id',
 		help='ID of the comment to remove (use "comments"'
 			' action to get comment ids along with the messages).')
 
-	cmd = add_command('tree',
+	cmd = cmds.add_parser('tree',
 		help='Show contents of onedrive (or folder) as a tree of file/folder names.'
 			' Note that this operation will have to (separately) request a listing of every'
 				' folder under the specified one, so can be quite slow for large number of these.')
