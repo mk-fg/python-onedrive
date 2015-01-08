@@ -48,11 +48,12 @@ After that, create "~/.lcrc" file ([YAML](https://en.wikipedia.org/wiki/YAML))
 with the contents like these:
 
 	client:
-	  id: 00000000620A3E4A
+	  id: '00000000620A3E4A'
 	  secret: gndrjIOLWYLkOPl0QhWIliQcg-MG1SRN
 
-(use "id" and "secret" acquired in the app registration step above, *indent these
-lines with spaces* - indenting with tabs is not allowed in YAML)
+(use "id" and "secret" acquired in the app registration step above, *indent
+these lines with spaces* - indenting with tabs is not allowed in YAML; it might
+also be worth quoting "id" value, as shown above)
 
 Then you need to perform OAuth 2.0 authorization dance by running the
 `onedrive-cli auth` command and following printed instructions (visit printed
@@ -120,6 +121,10 @@ If you get HTTP error 400 right after or during "auth" command, read
 [this comment on #4](https://github.com/mk-fg/python-onedrive/issues/4#issuecomment-18233153)
 (maybe with some context).
 
+And if stuff still doesn't work, please check the "Known Issues and Limitations"
+section right below before reporting it, as some of these might be known and
+essentially unfixable.
+
 
 
 Known Issues and Limitations
@@ -161,6 +166,15 @@ Known Issues and Limitations
 	Some issues with it (at the moment of writing this - 2014-12-08) are mentioned
 	in [#34](https://github.com/mk-fg/python-onedrive/issues/34)
 	and [#39](https://github.com/mk-fg/python-onedrive/issues/39).
+
+* Only in command-line script, HTTP error 400 ("Bad Request") during first
+	authentication process can sometimes be caused by using (i.e. putting it there
+	by hand) unquoted "jackpot" client_id in the YAML, which matches YAML octal
+	integer pattern (all digits, in 0-7 range).
+
+	Script detects this, emits a warning and tries to work around it, which should
+	work in most cases, but is not perfect, so try quoting the value if it fits
+	the above description. That's how it should be done for strings in YAML.
 
 
 Module usage

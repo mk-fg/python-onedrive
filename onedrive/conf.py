@@ -2,7 +2,7 @@
 from __future__ import unicode_literals, print_function
 
 import itertools as it, operator as op, functools as ft
-import os, sys, io, errno, tempfile, stat
+import os, sys, io, errno, tempfile, stat, re
 from os.path import dirname, basename
 
 import logging
@@ -44,8 +44,9 @@ class ConfigMixin(object):
 		path = os.path.expanduser(path)
 		with open(path, 'rb') as src:
 			portalocker.lock(src, portalocker.LOCK_SH)
-			conf = yaml.load(src.read())
+			yaml_str = src.read()
 			portalocker.unlock(src)
+		conf = yaml.load(yaml_str)
 		conf.setdefault('conf_save', path)
 
 		conf_cls = dict()
@@ -61,6 +62,17 @@ class ConfigMixin(object):
 							' near the aforementioned section/value.' ).format(ns=ns, k=k, path=path))
 				if v is not None: conf_cls['{}_{}'.format(ns, k)] = conf[ns][k]
 		conf_cls.update(overrides)
+
+		# Hack to work around YAML parsing client_id of e.g. 000123 as an octal int
+		if isinstance(conf.get('client', dict()).get('id'), (int, long)):
+			log.warn( 'Detected client_id being parsed as an integer (as per yaml), trying to un-mangle it.'
+				' If requests will still fail afterwards, please replace it in the configuration file (path: %r),'
+					' also putting single or double quotes (either one should work) around the value.', path )
+			cid = conf['client']['id']
+			if not re.search(r'\b(0*)?{:d}\b'.format(cid), yaml_str)\
+					and re.search(r'\b(0*)?{:o}\b'.format(cid), yaml_str):
+				cid = int('{:0}'.format(cid))
+			conf['client']['id'] = '{:016d}'.format(cid)
 
 		self = cls(**conf_cls)
 		self.conf_save = conf['conf_save']
