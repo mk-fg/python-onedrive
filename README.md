@@ -208,22 +208,21 @@ Installation
 
 It's a regular package for Python 2.7 (not 3.X).
 
-Using [pip](http://pip-installer.org/) (see also
-) is the best way:
+Using [pip](http://pip-installer.org/) is the best way:
 
-	% pip install 'python-onedrive[standalone]'
+	% pip install 'python-onedrive[cli]'
 
 If you don't have it, use:
 
 	% easy_install pip
-	% pip install 'python-onedrive[standalone]'
+	% pip install 'python-onedrive[cli]'
 
 Alternatively (see also
 [pip2014.com](http://pip2014.com/) and
 [install guide](http://www.pip-installer.org/en/latest/installing.html)):
 
 	% curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
-	% pip install 'python-onedrive[standalone]'
+	% pip install 'python-onedrive[cli]'
 
 Or, if you absolutely must:
 
@@ -235,9 +234,17 @@ Current-git version can be installed like this:
 
 	% pip install 'git+https://github.com/mk-fg/python-onedrive.git#egg=python-onedrive'
 
-"standalone" option above enables dependency on "requests" module, which is used
-as default HTTP client lib. If the plan is to extend or override that, flag can
-be dropped.
+
+"cli" option above enables dependency on "requests" and "PyYAML" modules, which
+are used as a default http client lib and for the cli tool configuration respectively.
+
+If the plan is to only use python module, "standalone" extras-flag can be used
+instead (will only pull in "requests" module).
+
+And in case the module is used with different http client lib (i.e. plan is to
+extend/override that), no flags can be specified to avoid dragging in extra
+(unused) deps.
+
 
 Note that to install stuff in system-wide PATH and site-packages, elevated
 privileges are often required.
@@ -258,12 +265,14 @@ without any installation, if that's the only thing you need there.
 	[requests](http://docs.python-requests.org/en/latest/) - version 0.14.0 or
 	higher.
 
-	Should be installed automatically by pip if "[standalone]"
+	Should be installed automatically by pip if "[standalone]" or "[cli]"
 	[extras-flag](https://pythonhosted.org/setuptools/setuptools.html#declaring-extras)
 	is specified, as suggested above.
 
 * (optional, recommended) [PyYAML](http://pyyaml.org) - required for CLI tool
 	and optional persistent-state ("conf") module only.
+
+	Gets pulled-in as a dependency with "[cli]" or "[conf]" extras-flag.
 
 * (only on windows) [pywin32](http://sourceforge.net/projects/pywin32/) - for
 	CLI tool (used to lock configuration file on changes) and optional conf module
