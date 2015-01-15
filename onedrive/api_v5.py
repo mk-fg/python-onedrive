@@ -434,8 +434,11 @@ class OneDriveAPIWrapper(OneDriveAuth):
 					raise ValueError('Failed to process folder_id for BITS API: {!r}'.format(folder_id))
 				folder_id = match.group('user_id')
 
-		url = (self.api_bits_url_by_id if folder_id else self.api_bits_url_by_path)\
-			.format(folder_id=folder_id, user_id=user_id, file_path=ujoin(folder_path, name).lstrip('/'))
+		if folder_id:
+			url = self.api_bits_url_by_id.format(folder_id=folder_id, user_id=user_id, filename=name)
+		else:
+			url = self.api_bits_url_by_path.format(
+				folder_id=folder_id, user_id=user_id, file_path=ujoin(folder_path, name).lstrip('/') )
 
 		code, headers, body = self(
 			url, method='post', auth_header=True, raw_all=True,
