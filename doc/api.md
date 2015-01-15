@@ -132,7 +132,7 @@
 
     * api\_bits\_url\_by\_id = 'https://cid-{user_id}.users.storage.live.com/items/{folder_id}/{filename}'
 
-    * api\_bits\_url\_by\_path = 'https://cid-{user_id}.users.storage.live.com/users/0x{user_id}/LiveFolders/{folder_path}/{filename}'
+    * api\_bits\_url\_by\_path = 'https://cid-{user_id}.users.storage.live.com/users/0x{user_id}/LiveFolders/{file_path}'
 
     * api\_bits\_protocol\_id = '{7df0354d-249b-430f-820d-3d2a9bef4931}'
 

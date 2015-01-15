@@ -259,7 +259,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
 		'https://cid-{user_id}.users.storage.live.com/items/{folder_id}/{filename}' )
 	api_bits_url_by_path = (
 		'https://cid-{user_id}.users.storage.live.com'
-			'/users/0x{user_id}/LiveFolders/{folder_path}/{filename}' )
+			'/users/0x{user_id}/LiveFolders/{file_path}' )
 	api_bits_protocol_id = '{7df0354d-249b-430f-820d-3d2a9bef4931}'
 	api_bits_default_frag_bytes = 10 * 2**20 # 10 MiB
 
@@ -384,7 +384,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
 		if bits_api_fallback is not False:
 			if bits_api_fallback is True: bits_api_fallback = self.api_put_max_bytes
 			src.seek(0, os.SEEK_END)
-			if src.tell() > bits_api_fallback:
+			if src.tell() >= bits_api_fallback:
 				if bits_api_fallback > 0: # not really a "fallback" in this case
 					log.info(
 						'Falling-back to using BITS API due to file size (%.1f MiB > %.1f MiB)',
@@ -424,12 +424,18 @@ class OneDriveAPIWrapper(OneDriveAuth):
 
 		user_id = self.get_user_id()
 		if folder_id: # workaround for API-ids inconsistency between BITS and regular API
-			match = re.search(r'^(?i)folder.[a-f0-9]+.([a-f0-9]+!\d+)$', folder_id)
-			if not match:
-				raise ValueError('Failed to process folder_id for BITS API: {!r}'.format(folder_id))
-			folder_id = match.group(1)
+			match = re.search( r'^(?i)folder.[a-f0-9]+.'
+				'(?P<user_id>[a-f0-9]+(?P<folder_n>!\d+)?)$', folder_id )
+			if match and not match.group('folder_n'):
+				# root folder is a special case and can't seem to be accessed by id
+				folder_id, folder_path = None, ''
+			else:
+				if not match:
+					raise ValueError('Failed to process folder_id for BITS API: {!r}'.format(folder_id))
+				folder_id = match.group('user_id')
+
 		url = (self.api_bits_url_by_id if folder_id else self.api_bits_url_by_path)\
-			.format(folder_id=folder_id, folder_path=folder_path, user_id=user_id, filename=name)
+			.format(folder_id=folder_id, user_id=user_id, file_path=ujoin(folder_path, name).lstrip('/'))
 
 		code, headers, body = self(
 			url, method='post', auth_header=True, raw_all=True,
