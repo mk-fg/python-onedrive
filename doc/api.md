@@ -138,6 +138,8 @@
 
     * api\_bits\_default\_frag\_bytes = 10485760
 
+    * api\_bits\_auth\_refresh\_before\_commit\_hack = False
+
 
     * \_\_call\_\_(url='me/skydrive', query={}, query\_filter=True, auth\_header=False, auto\_refresh\_token=True, \*\*request\_kwz)
 

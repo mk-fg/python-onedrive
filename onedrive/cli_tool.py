@@ -190,6 +190,10 @@ def main():
 		type=int, metavar='number',
 		default=api_v5.PersistentOneDriveAPI.api_bits_default_frag_bytes,
 		help='Fragment size for using BITS API (if used), in bytes. Default: %(default)s')
+	cmd.add_argument('--bits-do-auth-refresh-before-commit-hack', action='store_true',
+		help='Do auth_refresh trick before upload session commit request.'
+			' This is reported to avoid current (as of 2015-01-16) http 5XX errors from the API.'
+			' See github issue #39, gist with BITS API spec and the README file for more details.')
 
 	cmd = cmds.add_parser('cp', help='Copy file to a folder.')
 	cmd.add_argument('file', help='File (object) to copy.')
@@ -336,6 +340,8 @@ def main():
 
 	elif optz.call == 'put':
 		dst = optz.folder
+		if optz.bits_do_auth_refresh_before_commit_hack:
+			api.api_bits_auth_refresh_before_commit_hack = True
 		if optz.bits_frag_bytes > 0: api.api_bits_default_frag_bytes = optz.bits_frag_bytes
 		if dst is not None:
 			xres = api.put( optz.file, resolve_path(dst),

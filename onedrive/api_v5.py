@@ -262,6 +262,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
 			'/users/0x{user_id}/LiveFolders/{file_path}' )
 	api_bits_protocol_id = '{7df0354d-249b-430f-820d-3d2a9bef4931}'
 	api_bits_default_frag_bytes = 10 * 2**20 # 10 MiB
+	api_bits_auth_refresh_before_commit_hack = False
 
 	_user_id = None # cached from get_user_id calls
 
@@ -473,6 +474,11 @@ class OneDriveAPIWrapper(OneDriveAuth):
 					'BITS-Session-Id': bits_sid,
 					'Content-Range': 'bytes {}-{}/{}'.format(c, min(c1, src_len)-1, src_len) })
 			c = c1
+
+		if self.api_bits_auth_refresh_before_commit_hack:
+			# As per #39 and comments under the gist with the spec,
+			#  apparently this trick fixes occasional http-5XX errors from the API
+			self.auth_get_token()
 
 		code, headers, body = self(
 			url, method='post', auth_header=True, raw_all=True,
