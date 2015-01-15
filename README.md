@@ -158,14 +158,19 @@ Known Issues and Limitations
 	is not supported. It seem to have different
 	[SharePoint 2013 API](http://msdn.microsoft.com/en-us/library/fp142380%28v=office.15%29.aspx).
 
-* Be very careful when relying on [BITS API](https://gist.github.com/rgregg/37ba8929768a62131e85),
-	as it seem to be in a very experimental state for regular OneDrive service, with
-	only info I've seen on it (in relation to OneDrive, and not other MS services)
-	being that linked gist (actually pointed out to me by @bobobo1618 in #34).
+* Relying on [BITS API](https://gist.github.com/rgregg/37ba8929768a62131e85) too
+	much might not be a good idea, as it seem to be in a very experimental state
+	for regular OneDrive service, with only info I've seen on it (in relation to
+	OneDrive, and not other MS services) being that linked gist (actually pointed
+	out to me by @bobobo1618 in #34).
 
 	Some issues with it (at the moment of writing this - 2014-12-08) are mentioned
 	in [#34](https://github.com/mk-fg/python-onedrive/issues/34)
 	and [#39](https://github.com/mk-fg/python-onedrive/issues/39).
+
+	If you use this api for large uploads via command-line script and are getting
+	annoying http 5XX errors at the end of the large uploads, check out the
+	`--bits-do-auth-refresh-before-commit-hack` flag for the "put" command.
 
 * Only in command-line script, HTTP error 400 ("Bad Request") during first
 	authentication process can sometimes be caused by using (i.e. putting it there
