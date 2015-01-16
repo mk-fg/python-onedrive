@@ -181,6 +181,43 @@ Known Issues and Limitations
 	work in most cases, but is not perfect, so try quoting the value if it fits
 	the above description. That's how it should be done for strings in YAML.
 
+* (A lot of) `WARNING:requests.packages.urllib3.connectionpool:Connection pool is
+	full, discarding connection` messages get logged when using (default) requests
+	http client module, especially when using BITS API.
+
+	These do not interfere with functionality (apart from obvious connection reuse
+	issue), only cause noise.
+	I've no idea what this module might be doing wrong to cause that, suggestions
+	are welcome.
+
+	What does not make it go away:
+
+	* Using default requests connection pool (i.e. `requests.request()`).
+
+	* Explicitly calling `Response.close()` for each response object.
+
+	* Using `pool_block=True`.
+
+		Seem to be bugged-out at the moment (2015-01-17) - always raises TypeError,
+		but should not be desirable in most cases (like default cli script) anyway.
+
+	* Setting `session.headers['Connection'] = 'keep-alive'`.
+
+	What can be done:
+
+	* Dig into requests/urllib3 code and docs, find out what goes (and/or is
+		done-) wrong here.
+
+	* Coming up with a small script that would reproduce the issue (if it is
+		indeed a bug in requests module) and submitting it to requests developers.
+
+	* When using python logging machinery, disable/filter
+		`requests.packages.urllib3.connectionpool` logger to just silence the
+		warnings.
+
+		Not using that in the cli script to avoid hiding the issue.
+
+
 
 Module usage
 ----------------------------------------

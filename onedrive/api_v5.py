@@ -67,7 +67,9 @@ class OneDriveHTTPClient(object):
 
 	#: Keywords to pass to "requests.adapters.HTTPAdapter" subclass init.
 	#: Only used with later versions of "requests" than 1.0.0 (where adapters were introduced).
-	request_adapter_settings = None # Example: dict(max_retries=2)
+	#: Please do not touch these unless you've
+	#:  read requests module documentation on what they actually do.
+	request_adapter_settings = None # Example: dict(pool_maxsize=50)
 
 	_requests_setup_done = False
 
@@ -77,16 +79,19 @@ class OneDriveHTTPClient(object):
 		try: requests_version = tuple(it.imap(int, requests_version.split('.')))
 		except: requests_version = 999, 0, 0 # most likely some future version
 
-		if requests_version >= (1, 0, 0):
-			session = requests.Session()
-			session.mount('https://', requests.adapters.HTTPAdapter(**adapter_kws))
-
-		elif requests_version < (0, 14, 0):
+		if requests_version < (0, 14, 0):
 			raise RuntimeError( (
 				'Version of the "requests" python module (used by python-onedrive)'
 					' is incompatible - need at least 0.14.0, but detected {}.'
 					' Please update it (or file an issue if it worked before).' )\
 				.format(requests.__version__) )
+
+		if requests_version >= (1, 0, 0):
+			session = requests.Session()
+			session.mount('https://', requests.adapters.HTTPAdapter(**adapter_kws))
+		else:
+			log.warn( 'Not using request_adapter_settings, as these should not be'
+				' supported by detected requests module version: %s', requests_version )
 
 		self._requests_setup_done = True
 		return session
@@ -98,7 +103,6 @@ class OneDriveHTTPClient(object):
 		import requests # import here to avoid dependency on the module
 
 		if not self._requests_setup_done:
-			# (hopefully) temporary fix for https://github.com/mk-fg/python-onedrive/issues/1
 			patched_session = self._requests_setup(
 				requests, **(self.request_adapter_settings or dict()) )
 			if patched_session is not None: self._requests_session = patched_session

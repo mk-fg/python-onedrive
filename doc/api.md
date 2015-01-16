@@ -18,6 +18,9 @@
         Only used with later versions of "requests" than 1.0.0 (where
         adapters were introduced).
 
+        Please do not touch these unless you've read requests module
+        documentation on what they actually do.
+
 
     * request(url, method='get', data=None, files=None, raw=False, raw\_all=False, headers={}, raise\_for={}, session=None)
 
