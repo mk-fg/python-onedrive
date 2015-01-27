@@ -21,9 +21,9 @@
         Please do not touch these unless you've read requests module
         documentation on what they actually do.
 
-    * request\_base\_headers = {}
+    * request\_base\_headers = None
 
-        Headers to pass on with each request made.
+        Dict of headers to pass on with each request made.
 
         Can be useful if you want to e.g. disable gzip/deflate
         compression or other http features that are used by default.

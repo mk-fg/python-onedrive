@@ -71,10 +71,10 @@ class OneDriveHTTPClient(object):
 	#:  read requests module documentation on what they actually do.
 	request_adapter_settings = None # Example: dict(pool_maxsize=50)
 
-	#: Headers to pass on with each request made.
+	#: Dict of headers to pass on with each request made.
 	#: Can be useful if you want to e.g. disable gzip/deflate
 	#:  compression or other http features that are used by default.
-	request_base_headers = dict()
+	request_base_headers = None
 
 	_requests_setup_done = False
 
@@ -120,7 +120,7 @@ class OneDriveHTTPClient(object):
 		method = method.lower()
 		kwz, func = dict(), ft.partial(
 			session.request, method.upper(), **(self.request_extra_keywords or dict()) )
-		kwz_headers = self.request_base_headers.copy()
+		kwz_headers = (self.request_base_headers or dict()).copy()
 		kwz_headers.update(headers)
 		if data is not None:
 			if method in ['post', 'put']:
