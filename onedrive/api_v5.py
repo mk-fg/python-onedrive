@@ -71,6 +71,11 @@ class OneDriveHTTPClient(object):
 	#:  read requests module documentation on what they actually do.
 	request_adapter_settings = None # Example: dict(pool_maxsize=50)
 
+	#: Headers to pass on with each request made.
+	#: Can be useful if you want to e.g. disable gzip/deflate
+	#:  compression or other http features that are used by default.
+	request_base_headers = dict()
+
 	_requests_setup_done = False
 
 	def _requests_setup(self, requests, **adapter_kws):
@@ -115,6 +120,8 @@ class OneDriveHTTPClient(object):
 		method = method.lower()
 		kwz, func = dict(), ft.partial(
 			session.request, method.upper(), **(self.request_extra_keywords or dict()) )
+		kwz_headers = self.request_base_headers.copy()
+		kwz_headers.update(headers)
 		if data is not None:
 			if method in ['post', 'put']:
 				if all(hasattr(data, k) for k in ['seek', 'read']):
@@ -125,8 +132,7 @@ class OneDriveHTTPClient(object):
 				else: kwz['data'] = data
 			else:
 				kwz['data'] = json.dumps(data)
-				headers = headers.copy()
-				headers.setdefault('Content-Type', 'application/json')
+				kwz_headers.setdefault('Content-Type', 'application/json')
 		if files is not None:
 			# requests-2+ doesn't seem to add default content-type header
 			for k, file_tuple in files.iteritems():
@@ -134,7 +140,7 @@ class OneDriveHTTPClient(object):
 				# Rewind is necessary because request can be repeated due to auth failure
 				file_tuple[1].seek(0)
 			kwz['files'] = files
-		if headers is not None: kwz['headers'] = headers
+		if kwz_headers: kwz['headers'] = kwz_headers
 
 		code = res = None
 		try:

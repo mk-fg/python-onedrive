@@ -26,7 +26,8 @@ class ConfigMixin(object):
 	#:  to configuration file (preserving the rest) on updates.
 	conf_update_keys = dict(
 		client={'id', 'secret'},
-		auth={'code', 'refresh_token', 'access_expires', 'access_token'})
+		auth={'code', 'refresh_token', 'access_expires', 'access_token'},
+		request={'extra_keywords', 'adapter_settings', 'base_headers'} )
 
 	def __init__(self, **kwz):
 		raise NotImplementedError('Init should be overidden with something configurable')

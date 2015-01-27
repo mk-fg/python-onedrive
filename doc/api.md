@@ -21,6 +21,13 @@
         Please do not touch these unless you've read requests module
         documentation on what they actually do.
 
+    * request\_base\_headers = {}
+
+        Headers to pass on with each request made.
+
+        Can be useful if you want to e.g. disable gzip/deflate
+        compression or other http features that are used by default.
+
 
     * request(url, method='get', data=None, files=None, raw=False, raw\_all=False, headers={}, raise\_for={}, session=None)
 
@@ -350,7 +357,7 @@
 
     * conf\_path\_default = '~/.lcrc'
 
-    * conf\_update\_keys = {'client': set(['secret', 'id']), 'auth': set(['access\_token', 'code', 'access\_expires', 'refresh\_token'])}
+    * conf\_update\_keys = {'client': set(['secret', 'id']), 'request': set(['base\_headers', 'extra\_keywords', 'adapter\_settings']), 'auth': set(['access\_token', 'code', 'access\_expires', 'refresh\_token'])}
 
 
     * classmethod from\_conf(path=None, \*\*overrides)
