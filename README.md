@@ -182,20 +182,12 @@ Known Issues and Limitations
 	the above description. That's how it should be done for strings in YAML.
 
 * As was mentioned in [#45](https://github.com/mk-fg/python-onedrive/issues/45),
-	apparently sometimes OneDrive might do weird things with its gzip encoding.
+	sometimes OneDrive might do strange things and users might want to tweak
+	passed http headers.
 
-	It can be used by default (esp. if you're using recent "requests" module as
-	http client), and can be disabled by either setting this in the api subclass
-	(or in the instance):
-
-		request_base_headers = {'Accept-Encoding': ''}
-
-	Or, in case of command-line tool, add following to your ~/.lcrc configuration
-	file (all indents should be two spaces, it's a YAML file):
-
-		request:
-		  base_headers:
-		    Accept-Encoding: ''
+	This can be easily done via "request_base_headers" class attribute or
+	"request" section in the "~/.lcrc" file (for command-line tool only), as
+	described in the comments on the issue linked above.
 
 * (A lot of) `WARNING:requests.packages.urllib3.connectionpool:Connection pool is
 	full, discarding connection` messages get logged when using (default) requests
