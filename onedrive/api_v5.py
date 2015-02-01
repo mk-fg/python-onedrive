@@ -572,7 +572,7 @@ class OneDriveAPI(OneDriveAPIWrapper):
 	'''Biased synchronous OneDrive API interface.
 		Adds some derivative convenience methods over OneDriveAPIWrapper.'''
 
-	def resolve_path(self, path, root_id='me/skydrive', objects=False):
+	def resolve_path(self, path, root_id='me/skydrive', objects=False, listdir_limit=100):
 		'''Return id (or metadata) of an object, specified by chain
 				(iterable or fs-style path string) of "name" attributes
 				of its ancestors, or raises DoesNotExists error.
@@ -589,7 +589,14 @@ class OneDriveAPI(OneDriveAPIWrapper):
 			if path:
 				try:
 					for i, name in enumerate(path):
-						root_id = dict(it.imap(op.itemgetter('name', 'id'), self.listdir(root_id)))[name]
+						offset = None
+						while True:
+							obj_list = self.listdir(root_id, offset=offset, limit=listdir_limit)
+							try: root_id = dict(it.imap(op.itemgetter('name', 'id'), obj_list))[name]
+							except KeyError:
+								if len(obj_list) < listdir_limit: raise # assuming that it's the last page
+								offset = (offset or 0) + listdir_limit
+							else: break
 				except (KeyError, ProtocolError) as err:
 					if isinstance(err, ProtocolError) and err.code != 404: raise
 					raise DoesNotExists(root_id, path[i:])

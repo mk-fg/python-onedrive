@@ -313,7 +313,7 @@
     Adds some derivative convenience methods over OneDriveAPIWrapper.
 
 
-    * resolve\_path(path, root\_id='me/skydrive', objects=False)
+    * resolve\_path(path, root\_id='me/skydrive', objects=False, listdir\_limit=100)
 
         Return id (or metadata) of an object, specified by chain
         (iterable or fs-style path string) of "name" attributes of its
