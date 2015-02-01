@@ -572,7 +572,7 @@ class OneDriveAPI(OneDriveAPIWrapper):
 	'''Biased synchronous OneDrive API interface.
 		Adds some derivative convenience methods over OneDriveAPIWrapper.'''
 
-	def resolve_path(self, path, root_id='me/skydrive', objects=False, listdir_limit=100):
+	def resolve_path(self, path, root_id='me/skydrive', objects=False, listdir_limit=500):
 		'''Return id (or metadata) of an object, specified by chain
 				(iterable or fs-style path string) of "name" attributes
 				of its ancestors, or raises DoesNotExists error.
