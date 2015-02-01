@@ -114,7 +114,7 @@ def main():
 				' assuming that object gets passed as the first argument.'
 			' Objects that do not have specified key or cannot'
 				' be formatted using supplied template will be ignored entirely.'
-			' Example: {0[id]} {0[name]!r} {0[count]:03d}')
+			' Example: {0[id]} {0[name]!r} {0[count]:03d} (uploader: {0[from][name]})')
 
 	parser.add_argument('-e', '--encoding', metavar='enc', default='utf-8',
 		help='Use specified encoding (example: utf-8) for CLI input/output.'
