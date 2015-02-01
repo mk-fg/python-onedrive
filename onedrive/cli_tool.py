@@ -6,7 +6,7 @@ import itertools as it, operator as op, functools as ft
 from os.path import dirname, basename, exists, isdir, join, abspath
 from posixpath import join as ujoin, dirname as udirname, basename as ubasename
 from collections import defaultdict
-import os, sys, io, re, types, json
+import os, sys, io, logging, re, types, json
 
 try: import chardet
 except ImportError: chardet = None # completely optional
@@ -31,23 +31,31 @@ force_encoding = None
 
 def tree_node(): return defaultdict(tree_node)
 
-def print_result(data, file, indent='', indent_first=None, indent_level=' '*2):
+def print_result(data, file, tpl=None, indent='', indent_first=None, indent_level=' '*2):
 	# Custom printer is used because pyyaml isn't very pretty with unicode
 	if isinstance(data, list):
 		for v in data:
-			print_result( v, file=file, indent=indent + '  ',
+			print_result( v, file=file, tpl=tpl, indent=indent + '  ',
 				indent_first=(indent_first if indent_first is not None else indent) + '- ' )
 			indent_first = None
 	elif isinstance(data, dict):
 		indent_cur = indent_first if indent_first is not None else indent
-		for k, v in sorted(data.viewitems(), key=op.itemgetter(0)):
-			print(indent_cur + decode_obj(k, force=True) + ':', file=file, end='')
-			indent_cur = indent
-			if not isinstance(v, (list, dict)): # peek to display simple types inline
-				print_result(v, file=file, indent=' ')
-			else:
-				print('', file=file)
-				print_result(v, file=file, indent=indent_cur+indent_level)
+		if tpl is None:
+			for k, v in sorted(data.viewitems(), key=op.itemgetter(0)):
+				print(indent_cur + decode_obj(k, force=True) + ':', file=file, end='')
+				indent_cur = indent
+				if not isinstance(v, (list, dict)): # peek to display simple types inline
+					print_result(v, file=file, tpl=tpl, indent=' ')
+				else:
+					print('', file=file)
+					print_result(v, file=file, tpl=tpl, indent=indent_cur+indent_level)
+		else:
+			if '{' not in tpl and not re.search(r'^\s*$', tpl): tpl = '{{0[{}]}}'.format(tpl)
+			try: data = tpl.format(data)
+			except Exception as err:
+				log.debug( 'Omitting object that does not match template'
+					' (%r) from output (error: %s %s): %r', tpl, type(err), err, data )
+			else: print_result(data, file=file, indent=indent_cur)
 	else:
 		if indent_first is not None: indent = indent_first
 		print(indent + decode_obj(data, force=True), file=file)
@@ -99,6 +107,14 @@ def main():
 				' attributes of objects in the same parent folder might be used.')
 	parser.add_argument('-i', '--id', action='store_true',
 		help='Interpret file/folder arguments only as ids (default: guess).')
+
+	parser.add_argument('-k', '--object-key', metavar='spec',
+		help='If returned data is an object, or a list of objects, only print this key from there.'
+			' Supplied spec can be a template string for python str.format,'
+				' assuming that object gets passed as the first argument.'
+			' Objects that do not have specified key or cannot'
+				' be formatted using supplied template will be ignored entirely.'
+			' Example: {0[id]} {0[name]!r} {0[count]:03d}')
 
 	parser.add_argument('-e', '--encoding', metavar='enc', default='utf-8',
 		help='Use specified encoding (example: utf-8) for CLI input/output.'
@@ -245,7 +261,7 @@ def main():
 		sys.stdin = codecs.getreader(optz.encoding)(sys.stdin)
 		sys.stdout = codecs.getwriter(optz.encoding)(sys.stdout)
 
-	import logging
+	global log
 	log = logging.getLogger()
 	logging.basicConfig(level=logging.WARNING
 	if not optz.debug else logging.DEBUG)
@@ -371,7 +387,7 @@ def main():
 	else:
 		parser.error('Unrecognized command: {}'.format(optz.call))
 
-	if res is not None: print_result(res, file=sys.stdout)
+	if res is not None: print_result(res, tpl=optz.object_key, file=sys.stdout)
 	if optz.debug and xres is not None:
 		buff = io.StringIO()
 		print_result(xres, file=buff)
