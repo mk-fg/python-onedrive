@@ -106,6 +106,8 @@ class OneDriveHTTPClient(object):
 			if not exists(cacert_pem):
 				cacert_pem = join(sys._MEIPASS, 'requests', 'cacert.pem')
 			if not exists(cacert_pem):
+				cacert_pem = join(sys._MEIPASS, 'cacert.pem')
+			if not exists(cacert_pem):
 				raise OneDriveInteractionError(
 					'Failed to find requests cacert.pem bundle when running under PyInstaller.' )
 			requests.utils.DEFAULT_CA_BUNDLE_PATH = cacert_pem
