@@ -5,7 +5,7 @@ import itertools as it, operator as op, functools as ft
 
 from datetime import datetime, timedelta
 from posixpath import join as ujoin # used for url pahs
-from os.path import join, basename
+from os.path import join, basename, exists
 import os, sys, io, urllib, urlparse, json, types, re
 
 from onedrive.conf import ConfigMixin
@@ -98,6 +98,20 @@ class OneDriveHTTPClient(object):
 			log.warn( 'Not using request_adapter_settings, as these should not be'
 				' supported by detected requests module version: %s', requests_version )
 
+		if hasattr(sys, '_MEIPASS'): # fix cacert.pem path for running from PyInstaller bundle
+			cacert_pem = requests.certs.where()
+			if not exists(cacert_pem):
+				from pkg_resources import resource_filename
+				cacert_pem = resource_filename('requests', 'cacert.pem')
+			if not exists(cacert_pem):
+				cacert_pem = join(sys._MEIPASS, 'requests', 'cacert.pem')
+			if not exists(cacert_pem):
+				raise OneDriveInteractionError(
+					'Failed to find requests cacert.pem bundle when running under PyInstaller.' )
+			requests.utils.DEFAULT_CA_BUNDLE_PATH = cacert_pem
+			log.debug( 'Adjusted "requests" default ca-bundle'
+				' path (to run under PyInstaller) to: %s', cacert_pem )
+
 		self._requests_setup_done = True
 		return session
 
@@ -150,7 +164,7 @@ class OneDriveHTTPClient(object):
 		code = res = None
 		try:
 			res = func(url, **kwz)
-			# log.debug('Response headers: {}'.format(res.headers))
+			# log.debug('Response headers: %s', res.headers)
 			code = res.status_code
 			if code == requests.codes.no_content: return
 			if code != requests.codes.ok: res.raise_for_status()
