@@ -171,7 +171,7 @@ class OneDriveHTTPClient(object):
 			if code == requests.codes.no_content: return
 			if code != requests.codes.ok: res.raise_for_status()
 		except requests.RequestException as err:
-			message = str(err)
+			message = b'{0} [type: {1}, repr: {0!r}]'.format(err, type(err))
 			if res and getattr(res, 'text', None):
 				message = res.text
 				try: message = json.loads(message)
