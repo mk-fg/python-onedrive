@@ -77,6 +77,7 @@ class OneDriveHTTPClient(object):
 	request_base_headers = None
 
 	_requests_setup_done = False
+	_requests_base_keywords = None
 
 	def _requests_setup(self, requests, **adapter_kws):
 		session, requests_version = None, requests.__version__
@@ -110,7 +111,8 @@ class OneDriveHTTPClient(object):
 			if not exists(cacert_pem):
 				raise OneDriveInteractionError(
 					'Failed to find requests cacert.pem bundle when running under PyInstaller.' )
-			requests.utils.DEFAULT_CA_BUNDLE_PATH = cacert_pem
+			self._requests_base_keywords = (self._requests_base_keywords or dict()).copy()
+			self._requests_base_keywords.setdefault('verify', cacert_pem)
 			log.debug( 'Adjusted "requests" default ca-bundle'
 				' path (to run under PyInstaller) to: %s', cacert_pem )
 
@@ -139,8 +141,9 @@ class OneDriveHTTPClient(object):
 		elif not session: session = requests
 
 		method = method.lower()
-		kwz, func = dict(), ft.partial(
-			session.request, method.upper(), **(self.request_extra_keywords or dict()) )
+		kwz = (self._requests_base_keywords or dict()).copy()
+		kwz.update(self.request_extra_keywords or dict())
+		kwz, func = dict(), ft.partial(session.request, method.upper(), **kwz)
 		kwz_headers = (self.request_base_headers or dict()).copy()
 		kwz_headers.update(headers)
 		if data is not None:
