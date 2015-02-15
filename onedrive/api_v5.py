@@ -437,7 +437,12 @@ class OneDriveAPIWrapper(OneDriveAuth):
 				file_id = self.put_bits(path_or_tuple, folder_id=folder_id) # XXX: overwrite/downsize
 				return self.info(file_id)
 
-		return self( ujoin(folder_id, 'files', name),
+		# PUT seem to have better support for unicode
+		#  filenames and is recommended in the API docs, see #19.
+		# return self( ujoin(folder_id, 'files'),
+		# 	dict(overwrite=api_overwrite, downsize_photo_uploads=api_downsize),
+		# 	method='post', files=dict(file=(name, src)) )
+		return self( ujoin(folder_id, 'files', urllib.quote(name)),
 			dict(overwrite=api_overwrite, downsize_photo_uploads=api_downsize),
 			data=src, method='put', auth_header=True )
 
