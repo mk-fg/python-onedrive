@@ -175,11 +175,15 @@ class OneDriveHTTPClient(object):
 			if code != requests.codes.ok: res.raise_for_status()
 		except requests.RequestException as err:
 			message = b'{0} [type: {1}, repr: {0!r}]'.format(err, type(err))
-			if res and getattr(res, 'text', None):
+			if (res and getattr(res, 'text', None)) is not None: # "res" with non-200 code can be falsy
 				message = res.text
 				try: message = json.loads(message)
 				except: message = '{}: {!r}'.format(str(err), message)[:300]
-				else: message = '{}: {}'.format(message.pop('error', err), message)
+				else:
+					msg_err, msg_data = message.pop('error', None), message
+					if msg_err:
+						message = '{}: {}'.format(msg_err.get('code', err), msg_err.get('message', msg_err))
+						if msg_data: message = '{} (data: {})'.format(message, msg_data)
 			raise raise_for.get(code, ProtocolError)(code, message)
 		if raw: res = res.content
 		elif raw_all: res = code, dict(res.headers.items()), res.content
