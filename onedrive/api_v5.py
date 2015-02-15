@@ -323,6 +323,12 @@ class OneDriveAPIWrapper(OneDriveAuth):
 				self.api_url_base, '{}?{}'.format(path_or_url, urllib.urlencode(query)) )
 		return path_or_url
 
+	def _api_url_join(self, *slugs):
+		slugs = list(
+			urllib.quote(slug.encode('utf-8') if isinstance(slug, unicode) else slug)
+			for slug in slugs )
+		return ujoin(*slugs)
+
 	def _process_upload_source(self, path_or_tuple):
 		name, src = (basename(path_or_tuple), open(path_or_tuple, 'rb'))\
 			if isinstance(path_or_tuple, types.StringTypes)\
@@ -378,7 +384,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
 
 	def listdir(self, folder_id='me/skydrive', limit=None, offset=None):
 		'Get OneDrive object representing list of objects in a folder.'
-		return self(ujoin(folder_id, 'files'), dict(limit=limit, offset=offset))
+		return self(self._api_url_join(folder_id, 'files'), dict(limit=limit, offset=offset))
 
 	def info(self, obj_id='me/skydrive'):
 		'''Return metadata of a specified object.
@@ -392,7 +398,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
 			Examples: "0-499" - byte offsets 0-499 (inclusive), "-500" - final 500 bytes.'''
 		kwz = dict()
 		if byte_range: kwz['headers'] = dict(Range='bytes={}'.format(byte_range))
-		return self(ujoin(obj_id, 'content'), dict(download='true'), raw=True, **kwz)
+		return self(self._api_url_join(obj_id, 'content'), dict(download='true'), raw=True, **kwz)
 
 	def put( self, path_or_tuple, folder_id='me/skydrive',
 			overwrite=None, downsize=None, bits_api_fallback=True ):
@@ -439,10 +445,10 @@ class OneDriveAPIWrapper(OneDriveAuth):
 
 		# PUT seem to have better support for unicode
 		#  filenames and is recommended in the API docs, see #19.
-		# return self( ujoin(folder_id, 'files'),
+		# return self( self._api_url_join(folder_id, 'files'),
 		# 	dict(overwrite=api_overwrite, downsize_photo_uploads=api_downsize),
 		# 	method='post', files=dict(file=(name, src)) )
-		return self( ujoin(folder_id, 'files', urllib.quote(name)),
+		return self( self._api_url_join(folder_id, 'files', name),
 			dict(overwrite=api_overwrite, downsize_photo_uploads=api_downsize),
 			data=src, method='put', auth_header=True )
 
@@ -565,7 +571,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
 				even if link is never actually used.
 			link_type can be either "embed" (returns html), "shared_read_link" or "shared_edit_link".'''
 		assert link_type in ['embed', 'shared_read_link', 'shared_edit_link']
-		return self(ujoin(obj_id, link_type), method='get')
+		return self(self._api_url_join(obj_id, link_type), method='get')
 
 	def copy(self, obj_id, folder_id, move=False):
 		'''Copy specified file (object) to a folder with a given ID.
@@ -583,11 +589,11 @@ class OneDriveAPIWrapper(OneDriveAuth):
 
 	def comments(self, obj_id):
 		'Get OneDrive object representing a list of comments for an object.'
-		return self(ujoin(obj_id, 'comments'))
+		return self(self._api_url_join(obj_id, 'comments'))
 
 	def comment_add(self, obj_id, message):
 		'Add comment message to a specified object.'
-		return self( ujoin(obj_id, 'comments'),
+		return self( self._api_url_join(obj_id, 'comments'),
 			method='post', data=dict(message=message), auth_header=True )
 
 	def comment_delete(self, comment_id):
