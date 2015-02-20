@@ -32,8 +32,8 @@ Command-line usage
 ----------------------------------------
 
 OneDrive API requires to register an application in
-[DevCenter](https://dev.live.com/), providing you with client_id and
-client_secret strings, used for authentication.
+[DevCenter](https://account.live.com/developers/applications/create), providing
+you with client_id and client_secret strings, used for authentication.
 
 I can't provide some static ones because according to LiveConnect ToS "You are
 solely and entirely responsible for all uses of Live Connect occurring under
@@ -354,8 +354,9 @@ well-known for it's proprietary "cripple-everything-else" extension creep
 Microsoft.
 It has a twist in authrization_code grant flow for "mobile" apps, where bearer
 token refresh can be performed without having to provide client_secret. Client
-app must be marked as "mobile" in [DevCenter](https://dev.live.com/) for
-that to work.
+app must be marked as "mobile" in
+[DevCenter](https://account.live.com/developers/applications/create)
+for that to work.
 There's also totally LiveConnect-specific "Sign-In" auth flow.
 Access tokens for OneDrive scopes (plus wl.offline) seem to be issued with ttl
 of one hour.

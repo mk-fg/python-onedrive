@@ -46,7 +46,7 @@
         Client id/secret should be static on per-application basis.
 
         Can be received from LiveConnect by any registered user at:
-        https://manage.dev.live.com/
+        https://account.live.com/developers/applications/create
 
         API ToS can be found at: http://msdn.microsoft.com/en-US/library/live/ff765012
 
@@ -55,7 +55,7 @@
         Client id/secret should be static on per-application basis.
 
         Can be received from LiveConnect by any registered user at:
-        https://manage.dev.live.com/
+        https://account.live.com/developers/applications/create
 
         API ToS can be found at: http://msdn.microsoft.com/en-US/library/live/ff765012
 
