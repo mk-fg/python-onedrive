@@ -7,8 +7,7 @@ python-onedrive
 used in its place - i.e. just replace any "python-skydrive" pkg-spec with that.
 
 Python and command-line interface for
-[OneDrive REST API (version 5.0)](http://msdn.microsoft.com/library/dn659752.aspx)
-(formerly known as SkyDrive).
+[old SkyDrive/OneDrive REST API](http://msdn.microsoft.com/library/dn659752.aspx).
 
 This module allows to access data on Microsoft OneDrive cloud storage from
 python code, abstracting authentication, http requests and response processing
@@ -23,11 +22,12 @@ Thanks to AntonioChen for implementing windows and unicode support (see
 Service was called SkyDrive prior to 2014-02-19, when it got renamed to OneDrive.
 This package similarly renamed from python-skydrive to python-onedrive.
 
-Only old "apis.live.net/v5.0" (SkyDrive) API and BITS are used.
+As mentioned, only old "apis.live.net/v5.0" (SkyDrive) API (and BITS API for
+large files) are used here.
 Since 24 Feb 2015, there is new "api.onedrive.com/v1.0" API
 ([on github!](https://onedrive.github.io/)), as helpfully pointed out in
 [issue-52](https://github.com/mk-fg/python-onedrive/issues/52),
-which is not yet supported in any way.
+which is not (yet?) supported in any way here.
 
 Be sure to read "Known Issues and Limitations" section below before use, to
 avoid any potentially nasty surprises.
@@ -140,8 +140,8 @@ Known Issues and Limitations
 	["api.onedrive.com/v1.0" API](https://onedrive.github.io/),
 	which allows to do a lot more than the old one.
 
-	This is not yet supported in any way, and requires rewriting the module from
-	scratch for it.
+	This is not (yet?) supported in any way, and basically needs a new module for
+	it, which might be available elsewhere.
 
 	See also [issue-52](https://github.com/mk-fg/python-onedrive/issues/52).
 
