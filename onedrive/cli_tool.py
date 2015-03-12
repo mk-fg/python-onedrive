@@ -7,6 +7,8 @@ from os.path import dirname, basename, exists, isdir, join, abspath
 from posixpath import join as ujoin, dirname as udirname, basename as ubasename
 from collections import defaultdict
 import os, sys, io, logging, re, types, json
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 try: import chardet
 except ImportError: chardet = None # completely optional
