@@ -257,9 +257,8 @@ def main():
 	if optz.encoding:
 		global force_encoding
 		force_encoding = optz.encoding
-		import codecs
-		sys.stdin = codecs.getreader(optz.encoding)(sys.stdin)
-		sys.stdout = codecs.getwriter(optz.encoding)(sys.stdout)
+		reload(sys)
+		sys.setdefaultencoding(force_encoding)
 
 	global log
 	log = logging.getLogger()
