@@ -360,7 +360,7 @@
     * conf\_update\_keys = {'client': set(['secret', 'id']), 'request': set(['base\_headers', 'extra\_keywords', 'adapter\_settings']), 'auth': set(['access\_token', 'code', 'access\_expires', 'refresh\_token'])}
 
 
-    * classmethod from\_conf(path=None, \*\*overrides)
+    * from\_conf(path=None, \*\*overrides)
 
         Initialize instance from YAML configuration file, writing
         updates (only to keys, specified by "conf_update_keys") back to

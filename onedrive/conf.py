@@ -47,7 +47,7 @@ class ConfigMixin(object):
 			portalocker.lock(src, portalocker.LOCK_SH)
 			yaml_str = src.read()
 			portalocker.unlock(src)
-		conf = yaml.load(yaml_str)
+		conf = yaml.safe_load(yaml_str)
 		conf.setdefault('conf_save', path)
 
 		conf_cls = dict()
@@ -88,7 +88,7 @@ class ConfigMixin(object):
 		with open(self.conf_save, 'r+b') as src:
 			portalocker.lock(src, portalocker.LOCK_SH)
 			conf_raw = src.read()
-			conf = yaml.load(io.BytesIO(conf_raw)) if conf_raw else dict()
+			conf = yaml.safe_load(io.BytesIO(conf_raw)) if conf_raw else dict()
 			portalocker.unlock(src)
 
 			conf_updated = False
