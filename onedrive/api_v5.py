@@ -124,11 +124,11 @@ class OneDriveHTTPClient(object):
 		'''Make synchronous HTTP request.
 			Can be overidden to use different http module (e.g. urllib2, twisted, etc).'''
 		try: import requests # import here to avoid dependency on the module
-		except ImportError:
-			exc_t, exc_val, exc_tb = sys.exc_info()
-			raise ImportError( 'Unable to find/import "requests" module.'
+		except ImportError as exc:
+			exc.args = ( 'Unable to find/import "requests" module.'
 				' Please make sure that it is installed, e.g. by running "pip install requests" command.'
-				'\nFor more info, visit: http://docs.python-requests.org/en/latest/user/install/' ), exc_tb
+				'\nFor more info, visit: http://docs.python-requests.org/en/latest/user/install/',)
+			raise exc
 
 		if not self._requests_setup_done:
 			patched_session = self._requests_setup(
