@@ -6,7 +6,11 @@ import itertools as it, operator as op, functools as ft
 from datetime import datetime, timedelta
 from posixpath import join as ujoin # used for url pahs
 from os.path import join, basename, exists
-import os, sys, io, urllib, urlparse, json, types, re
+import os, sys, io, urllib, json, types, re
+try:
+	import urlparse
+except ImportError:
+	import urllib.parse as urlparse
 
 from onedrive.conf import ConfigMixin
 
