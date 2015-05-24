@@ -25,6 +25,8 @@ class ProtocolError(OneDriveInteractionError):
 		self.code = code
 
 class AuthenticationError(OneDriveInteractionError): pass
+class AuthMissingError(AuthenticationError): pass
+class APIAuthError(AuthenticationError): pass
 
 class NoAPISupportError(OneDriveInteractionError):
 	'''Request operation is known to be not supported by the OneDrive API.
@@ -226,7 +228,7 @@ class OneDriveAuth(OneDriveHTTPClient):
 
 	def auth_user_get_url(self, scope=None):
 		'Build authorization URL for User Agent.'
-		if not self.client_id: raise AuthenticationError('No client_id specified')
+		if not self.client_id: raise AuthMissingError('No client_id specified')
 		return '{}?{}'.format(self.auth_url_user, urllib.urlencode(dict(
 			client_id=self.client_id, scope=' '.join(scope or self.auth_scope),
 			response_type='code', redirect_uri=self.auth_redirect_uri )))
@@ -237,7 +239,7 @@ class OneDriveAuth(OneDriveHTTPClient):
 		url_qs = dict(it.chain.from_iterable(
 			urlparse.parse_qsl(v) for v in [url.query, url.fragment] ))
 		if url_qs.get('error'):
-			raise AuthenticationError(
+			raise APIAuthError(
 				'{} :: {}'.format(url_qs['error'], url_qs.get('error_description')) )
 		self.auth_code = url_qs['code']
 		return self.auth_code
@@ -250,7 +252,10 @@ class OneDriveAuth(OneDriveHTTPClient):
 	def _auth_token_request(self):
 		post_data = dict( client_id=self.client_id,
 			client_secret=self.client_secret, redirect_uri=self.auth_redirect_uri )
-		if not self.auth_refresh_token:
+		if not (self.auth_refresh_token or self.auth_code):
+			raise AuthMissingError( 'One of auth_refresh_token'
+				' or auth_code must be provided for authentication.' )
+		elif not self.auth_refresh_token:
 			log.debug('Requesting new access_token through authorization_code grant')
 			post_data.update(code=self.auth_code, grant_type='authorization_code')
 		else:
@@ -262,7 +267,7 @@ class OneDriveAuth(OneDriveHTTPClient):
 			k for k in ['client_id', 'client_secret', 'code', 'refresh_token', 'grant_type']
 			if k in post_data and not post_data[k] )
 		if post_data_missing_keys:
-			raise AuthenticationError( 'Insufficient authentication'
+			raise AuthMissingError( 'Insufficient authentication'
 				' data provided (missing keys: {})'.format(post_data_missing_keys) )
 		return self.request(self.auth_url_token, method='post', data=post_data)
 
@@ -312,11 +317,11 @@ class OneDriveAPIWrapper(OneDriveAuth):
 		if not pass_empty_values:
 			for k, v in query.viewitems():
 				if not v and v != 0:
-					raise AuthenticationError(
+					raise AuthMissingError(
 						'Empty key {!r} for API call (path/url: {})'.format(k, path_or_url) )
 		if re.search(r'^(https?|spdy):', path_or_url):
 			if '?' in path_or_url:
-				raise AuthenticationError('URL must not include query: {}'.format(path_or_url))
+				raise AuthMissingError('URL must not include query: {}'.format(path_or_url))
 			path_or_url = path_or_url + '?{}'.format(urllib.urlencode(query))
 		else:
 			path_or_url = urlparse.urljoin(
@@ -356,11 +361,11 @@ class OneDriveAPIWrapper(OneDriveAuth):
 			request_kwz.setdefault('headers', dict())['Authorization'] =\
 				'Bearer {}'.format(self.auth_access_token)
 		kwz = request_kwz.copy()
-		kwz.setdefault('raise_for', dict())[401] = AuthenticationError
+		kwz.setdefault('raise_for', dict())[401] = APIAuthError
 		api_url = ft.partial( self._api_url,
 			url, query, pass_access_token=not auth_header )
 		try: return self.request(api_url(), **kwz)
-		except AuthenticationError:
+		except APIAuthError:
 			if not auto_refresh_token: raise
 			self.auth_get_token()
 			if auth_header: # update auth header with a new token

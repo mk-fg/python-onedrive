@@ -367,6 +367,11 @@
         it.
 
 
+* **exception onedrive.api\_v5.APIUsageError**
+
+    Bases: "exceptions.Exception"
+
+
 * **exception onedrive.api\_v5.OneDriveInteractionError**
 
     Bases: "exceptions.Exception"
