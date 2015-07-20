@@ -536,8 +536,9 @@ class OneDriveAPIWrapper(OneDriveAuth):
 
 			if chunk_callback:
 				chunk_callback(
-					bytes_uploaded=c, bytes_count=src_len,
-					chunk_n=n, chunk_count=cn, bits_session_id=bits_sid )
+					bytes_transferred=c, bytes_total=src_len,
+					chunks_transferred=n, chunks_total=cn,
+					bits_session_id=bits_sid )
 
 		if self.api_bits_auth_refresh_before_commit_hack:
 			# As per #39 and comments under the gist with the spec,
