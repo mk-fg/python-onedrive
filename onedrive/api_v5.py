@@ -458,14 +458,17 @@ class OneDriveAPIWrapper(OneDriveAuth):
 			data=src, method='put', auth_header=True )
 
 	def put_bits( self, path_or_tuple,
-			folder_id=None, folder_path=None, frag_bytes=None, raw_id=False, callback=None ):
+			folder_id=None, folder_path=None, frag_bytes=None,
+			raw_id=False, chunk_callback=None ):
 		'''Upload a file (object) using BITS API (via several http requests), possibly
 				overwriting (default behavior) a file with the same "name" attribute, if it exists.
 
 			Unlike "put" method, uploads to "folder_path" (instead of folder_id) are
 				supported here. Either folder path or id can be specified, but not both.
-				If "callback" is provided it will be called everytime a chunk has been
-				uploaded with the current offset and source length.
+
+			Passed "chunk_callback" function (if any) will be called after each
+				uploaded chunk with keyword parameters corresponding to
+				upload state and BITS session info required to resume it, if necessary.
 
 			Returns id of the uploaded file, as retured by the API
 				if raw_id=True is passed, otherwise in a consistent (with other calls)
@@ -531,8 +534,10 @@ class OneDriveAPIWrapper(OneDriveAuth):
 					'Content-Range': 'bytes {}-{}/{}'.format(c, min(c1, src_len)-1, src_len) })
 			c = c1
 
-			if callback:
-				callback(c, src_len)
+			if chunk_callback:
+				chunk_callback(
+					bytes_uploaded=c, bytes_count=src_len,
+					chunk_n=n, chunk_count=cn, bits_session_id=bits_sid )
 
 		if self.api_bits_auth_refresh_before_commit_hack:
 			# As per #39 and comments under the gist with the spec,
