@@ -338,6 +338,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
 		name, src = (basename(path_or_tuple), open(path_or_tuple, 'rb'))\
 			if isinstance(path_or_tuple, types.StringTypes)\
 			else (path_or_tuple[0], path_or_tuple[1])
+		if isinstance(src, types.StringTypes): src = io.BytesIO(src)
 		return name, src
 
 	def _translate_api_flag(self, val, name=None, special_vals=None):
