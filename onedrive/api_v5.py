@@ -511,10 +511,11 @@ class OneDriveAPIWrapper(OneDriveAuth):
 		h = lambda k,hs=dict((k.lower(), v) for k,v in headers.viewitems()): hs.get(k, '')
 		checks = [ code == 201,
 			h('bits-packet-type').lower() == 'ack',
-			h('bits-protocol').lower() == self.api_bits_protocol_id.lower() ]
+			h('bits-protocol').lower() == self.api_bits_protocol_id.lower(),
+			h('bits-session-id') ]
 		if not all(checks):
 			raise ProtocolError(code, 'Invalid BITS Create-Session response', headers, body, checks)
-		bits_sid = headers['bits-session-id']
+		bits_sid = h('bits-session-id')
 
 		src.seek(0, os.SEEK_END)
 		c, src_len = 0, src.tell()
