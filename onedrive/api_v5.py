@@ -5,7 +5,7 @@ import itertools as it, operator as op, functools as ft
 
 from datetime import datetime, timedelta
 from posixpath import join as ujoin # used for url pahs
-from os.path import join, basename, exists
+from os.path import join, basename, dirname, exists
 import os, sys, io, urllib, urlparse, json, types, re
 
 from onedrive.conf import ConfigMixin
@@ -101,7 +101,32 @@ class OneDriveHTTPClient(object):
 			log.warn( 'Not using request_adapter_settings, as these should not be'
 				' supported by detected requests module version: %s', requests_version )
 
-		if hasattr(sys, '_MEIPASS'): # fix cacert.pem path for running from PyInstaller bundle
+		if requests_version >= (2, 4, 0):
+			# Workaround for https://github.com/certifi/python-certifi/issues/26
+			import ssl
+			if ssl.OPENSSL_VERSION_INFO < (1, 0, 2):
+				try: import certifi
+				except ImportError: pass
+				else:
+					certifi_issue_url = 'https://github.com/certifi/python-certifi/issues/26'
+					if hasattr(certifi, 'old_where'):
+						cacert_pem = certifi.old_where()
+					else:
+						cacert_pem = join(dirname(requests.certs.__file__), 'cacert.pem')
+						if not exists(cacert_pem):
+							cacert_pem = None
+							log.warn( 'Failed to find requests'
+								' certificate bundle for woraround to %s', certifi_issue_url )
+					if cacert_pem:
+						self._requests_base_keywords = (self._requests_base_keywords or dict()).copy()
+						self._requests_base_keywords.setdefault('verify', cacert_pem)
+						log.debug( 'Adjusted "requests" default ca-bundle path, to work around %s '
+							' [OpenSSL version %s, requests %s (>2.4.0) and certifi available at %r], to: %s',
+							certifi_issue_url, ssl.OPENSSL_VERSION_INFO,
+							requests_version, certifi.__file__, cacert_pem )
+
+		if hasattr(sys, '_MEIPASS'):
+			# Fix cacert.pem path for running from PyInstaller bundle
 			cacert_pem = requests.certs.where()
 			if not exists(cacert_pem):
 				from pkg_resources import resource_filename
