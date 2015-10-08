@@ -1,10 +1,10 @@
 python-onedrive
 ----------------------------------------
 
-**Compatibility note:** if setup.py, requirements.txt and/or package depends on
-"skydrive.api_v5" module from python-skydrive (pre-rename, now it's
-"onedrive.api_v5"), "python-onedrive==14.04.0" package (with old API) can be
-used in its place - i.e. just replace any "python-skydrive" pkg-spec with that.
+**Deprecation Warning:**
+this module is completely obsoleted by official
+[onedrive-sdk-python](https://github.com/OneDrive/onedrive-sdk-python),
+for all new projects please use that instead.
 
 Python and command-line interface for
 [old SkyDrive/OneDrive REST API](http://msdn.microsoft.com/library/dn659752.aspx).
@@ -24,10 +24,8 @@ This package similarly renamed from python-skydrive to python-onedrive.
 
 As mentioned, only old "apis.live.net/v5.0" (SkyDrive) API (and BITS API for
 large files) are used here.
-Since 24 Feb 2015, there is new "api.onedrive.com/v1.0" API
-([on github!](https://onedrive.github.io/)), as helpfully pointed out in
-[issue-52](https://github.com/mk-fg/python-onedrive/issues/52),
-which is not (yet?) supported in any way here.
+Since 24 Feb 2015, there is new "api.onedrive.com/v1.0" API, which has an
+official python sdk - [onedrive-sdk-python](https://github.com/OneDrive/onedrive-sdk-python).
 
 Be sure to read "Known Issues and Limitations" section below before use, to
 avoid any potentially nasty surprises.
@@ -460,3 +458,8 @@ More details/discussion on this API can be found in
 and [this github gist](https://gist.github.com/rgregg/37ba8929768a62131e85).
 As of now (2014-11-21), this is "preliminary documentation and is subject to
 change".
+
+Since 24 Feb 2015, there is new "api.onedrive.com/v1.0" API available,
+and eventually (2015-10-09) got an official python sdk -
+[onedrive-sdk-python](https://github.com/OneDrive/onedrive-sdk-python) -
+which is probably the best option for any new python project.
