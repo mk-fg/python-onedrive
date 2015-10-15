@@ -138,10 +138,9 @@ Known Issues and Limitations
 	["api.onedrive.com/v1.0" API](https://onedrive.github.io/),
 	which allows to do a lot more than the old one.
 
-	This is not (yet?) supported in any way, and basically needs a new module for
-	it, which might be available elsewhere.
-
-	See also [issue-52](https://github.com/mk-fg/python-onedrive/issues/52).
+	This is not supported here in any way, but since 2015-10-09 is supported by
+	the official [onedrive-sdk-python](https://github.com/OneDrive/onedrive-sdk-python)
+	module, which should probably be used for all new projects instead of this one.
 
 * Uploading of files larger than ~100 MiB via single POST/PUT request is
 	apparently not supported by OneDrive API - see
@@ -268,6 +267,12 @@ for real-world API usage examples.
 
 Installation
 ----------------------------------------
+
+In case you've missed Deprecation Notice at the start of this file:
+
+* **DO NOT USE** this project for anything new, use official
+	[onedrive-sdk-python](https://github.com/OneDrive/onedrive-sdk-python)
+	instead.
 
 It's a regular package for Python 2.7 (not 3.X).
 

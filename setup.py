@@ -24,8 +24,8 @@ setup(
 
 	url='http://github.com/mk-fg/python-onedrive',
 
-	description='Python and command-line interface'
-				' for Microsoft LiveConnect OneDrive REST API v5.0',
+	description='Obsolete python/cli module for'
+		' MS SkyDrive/OneDrive old API, do not use for new projects',
 	long_description=readme,
 
 	classifiers=[
