@@ -274,6 +274,7 @@ class OneDriveAuth(OneDriveHTTPClient):
 		return self._auth_token_process(res, check_scope=check_scope)
 
 	def _auth_token_request(self):
+	    post_data_keys = ['client_id', 'grant_type']
 		post_data = dict( client_id=self.client_id,
 			client_secret=self.client_secret, redirect_uri=self.auth_redirect_uri )
 		if not (self.auth_refresh_token or self.auth_code):
@@ -282,14 +283,17 @@ class OneDriveAuth(OneDriveHTTPClient):
 		elif not self.auth_refresh_token:
 			log.debug('Requesting new access_token through authorization_code grant')
 			post_data.update(code=self.auth_code, grant_type='authorization_code')
+			post_data_keys.append('code')
 		else:
 			if self.auth_redirect_uri == self.auth_redirect_uri_mobile:
 				del post_data['client_secret'] # not necessary for "mobile" apps
+			else:
+			    post_data_keys.append('client_secret')
 			log.debug('Refreshing access_token')
 			post_data.update(refresh_token=self.auth_refresh_token, grant_type='refresh_token')
+			post_data_keys.append('refresh_token')
 		post_data_missing_keys = list(
-			k for k in ['client_id', 'client_secret', 'code', 'refresh_token', 'grant_type']
-			if k in post_data and not post_data[k] )
+			k for k in post_data_keys if k in post_data and not post_data[k] )
 		if post_data_missing_keys:
 			raise AuthMissingError( 'Insufficient authentication'
 				' data provided (missing keys: {})'.format(post_data_missing_keys) )
