@@ -329,6 +329,8 @@ without any installation, if that's the only thing you need there.
 
 * [Python 2.7 (not 3.X)](http://python.org/)
 
+* argparse
+
 * (unless your plan is to override that)
 	[requests](http://docs.python-requests.org/en/latest/) - version 0.14.0 or
 	higher.
