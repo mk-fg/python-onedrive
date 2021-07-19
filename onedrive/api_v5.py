@@ -148,7 +148,7 @@ class OneDriveHTTPClient(object):
 	def request( self, url, method='get', data=None, files=None,
 				raw=False, raw_all=False, headers=dict(), raise_for=dict(), session=None ):
 		'''Make synchronous HTTP request.
-			Can be overidden to use different http module (e.g. urllib2, twisted, etc).'''
+			Can be overridden to use different http module (e.g. urllib2, twisted, etc).'''
 		try: import requests # import here to avoid dependency on the module
 		except ImportError as exc:
 			exc.args = ( 'Unable to find/import "requests" module.'
@@ -495,7 +495,7 @@ class OneDriveAPIWrapper(OneDriveAuth):
 				uploaded chunk with keyword parameters corresponding to
 				upload state and BITS session info required to resume it, if necessary.
 
-			Returns id of the uploaded file, as retured by the API
+			Returns id of the uploaded file, as returned by the API
 				if raw_id=True is passed, otherwise in a consistent (with other calls)
 				"file.{user_id}.{file_id}" format (default).'''
 		# XXX: overwrite/downsize are not documented/supported here (yet?)

@@ -33,7 +33,7 @@
 
         Make synchronous HTTP request.
 
-        Can be overidden to use different http module (e.g. urllib2,
+        Can be overridden to use different http module (e.g. urllib2,
         twisted, etc).
 
 
@@ -238,7 +238,7 @@
         upload state and BITS session info required to resume it, if
         necessary.
 
-        Returns id of the uploaded file, as retured by the API if
+        Returns id of the uploaded file, as returned by the API if
         raw_id=True is passed, otherwise in a consistent (with other
         calls) "file.{user_id}.{file_id}" format (default).
 
