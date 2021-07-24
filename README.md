@@ -348,7 +348,7 @@ without any installation, if that's the only thing you need there.
 
 * (optional) [chardet](http://pypi.python.org/pypi/chardet) - only used to
 	detect encoding (utf-8, gbk, koi8-r, etc) of the command-line arguments to
-	support workng with non-ascii (e.g. cyrillic, chinese) names, if explicitly
+	support working with non-ascii (e.g. cyrillic, chinese) names, if explicitly
 	requested.
 
 	Not needed unless you specifically use cli tool with "--encoding detect"
@@ -367,10 +367,10 @@ It's quite a conventional REST API with JSON encoding of structured data, like
 pretty much every other trendy modern API, say, github.
 
 Authentication is ["OAuth 2.0"](http://msdn.microsoft.com/en-us/library/dn659750.aspx),
-which is quite ambigous all by itself, and especially when being implemented by
+which is quite ambiguous all by itself, and especially when being implemented by
 well-known for it's proprietary "cripple-everything-else" extension creep
 Microsoft.
-It has a twist in authrization_code grant flow for "mobile" apps, where bearer
+It has a twist in authorization_code grant flow for "mobile" apps, where bearer
 token refresh can be performed without having to provide client_secret. Client
 app must be marked as "mobile" in
 [DevCenter](https://account.live.com/developers/applications/create)
